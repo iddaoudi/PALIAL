@@ -12,44 +12,23 @@
 #include "lapacke.h"
 #include "cblas.h"
 
-#define MSIZE 6
+#define MSIZE 4
 #define BSIZE 2
 
 #include "descriptor.h"
-#include "block_address.h"
-#define A(m,n) MATRIX_block_address(A, m, n)
+#include "tile_address.h"
+#define A(m,n) MATRIX_tile_address(A, m, n)
 
 #include "print.h"
 
-//struct Matrix
-//{
-//    /* Square matrix required */
-//    int size;
-//    double** data;
-//};
-//typedef struct Matrix Matrix;
-//
-//Matrix* matrix_init(int size)
-//{
-//    struct Matrix *matrix = (Matrix*)malloc(sizeof(Matrix));
-//    matrix->size = size;
-//    double **data = malloc(size * sizeof(double*));
-//    for (int i = 0; i < size; i++)
-//    {
-//        data[i] = malloc(size * sizeof(double));
-//    }
-//    matrix->data = data;
-//    return matrix;
-//}
+#define SPECIAL4x4 1
 
 void cholesky(MATRIX_desc A)
 {
     int k, m, n;
     for (k = 0; k < BSIZE; k++)
     {
-        //double *tileA = &matrix_A->data[k][k];
         double *tileA = A(k,k);
-        //printf("%f\n", (double*) A(k,k));
         int info = LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                 'U', 
                 BSIZE, 
@@ -59,8 +38,6 @@ void cholesky(MATRIX_desc A)
         
         for (m = k+1; m < BSIZE; m++)
         {
-            //double *tileA = &matrix_A->data[k][k];
-            //double *tileB = &matrix_A->data[k][m]; //FIXME
             double *tileA = A(k,k);
             double *tileB = A(k,m);
             cblas_dtrsm(CblasColMajor, 
@@ -80,8 +57,6 @@ void cholesky(MATRIX_desc A)
 
         for (m = k+1; m < BSIZE; m++)
         {
-            //double *tileA = &matrix_A->data[k][m]; //FIXME
-            //double *tileB = &matrix_A->data[m][m];
             double *tileA = A(k,m);
             double *tileB = A(m,m);
             cblas_dsyrk(CblasColMajor, 
@@ -99,9 +74,6 @@ void cholesky(MATRIX_desc A)
 
             for (n = k+1; n < m; n++)
             {
-                //double* tileA = &matrix_A->data[k][n]; //FIXME
-                //double* tileB = &matrix_A->data[k][m];
-                //double* tileC = &matrix_A->data[n][m];
                 double *tileA = A(k,n);
                 double *tileB = A(k,m);
                 double *tileC = A(n,m);
@@ -128,30 +100,34 @@ void cholesky(MATRIX_desc A)
 
 void matrix_populate(MATRIX_desc A)
 {
-    for (int i = 0; i < A.lm; i++)
-    {
-        for (int j = 0; j < A.ln; j++)
-        {
-            double *dA = A(i, j);
-            *dA = 0.0;
-        }
-    }
+    
+#ifdef SPECIAL4x4
+    double *dA = A(0, 0);
+    dA[0] = 4.5;
+    dA[1] = -0.095026;
+    dA[2] = -0.095026;
+    dA[3] = 3.719688;
+    dA = A(1, 0);
+    dA[0] = 0.361857;
+    dA[1] = 0.388551;
+    dA[2] = -0.447549;
+    dA[3] = 0.155058;
+    dA = A(0, 1);
+    dA[0] = 0.361857;
+    dA[1] = -0.447549;
+    dA[2] = 0.388551;
+    dA[3] = 0.155058;
+    dA = A(1, 1);
+    dA[0] = 4.484953;
+    dA[1] = 0.342457;
+    dA[2] = 0.342457;
+    dA[3] = 3.982519;
+#endif
+
 }
 
 int main ()
 {
-    /* Allocating matrix A the proper way */
-    //Matrix* matrix_A = matrix_init(MSIZE);
-    /* Populating matrix A */	
-    //for (int i = 0; i < MSIZE; i++)
-    //{
-    //	for (int j = 0; j < MSIZE; j++)
-    //	{
-    //		if (i == j)
-    //			matrix_A->data[i][j] = 0.0;
-    //	}
-    //}
-
     //matrix_A->data[0][0] = 1.0;
     //matrix_A->data[0][1] = 1.0;
     //matrix_A->data[0][2] = 1.0;
@@ -169,8 +145,6 @@ int main ()
     //matrix_A->data[3][2] = 14.0;
     //matrix_A->data[3][3] = 15.0;
 
-    //print_matrix(matrix_A);
-    
     MATRIX_desc *A = NULL;
     double *ptr = 0;
     int error = posix_memalign((void**)&ptr, getpagesize(), MSIZE * MSIZE* sizeof(double)); //FIXME sizeof(double)
@@ -182,12 +156,12 @@ int main ()
     matrix_desc_create(&A, ptr, BSIZE, BSIZE, MSIZE*MSIZE, BSIZE*BSIZE, MSIZE, MSIZE);
 
     matrix_populate(*A); 
-
+    print_matrix(*A);
+    
     cholesky(*A);
 
+    print_matrix(*A);
+    
     free(A->mat);
     matrix_desc_destroy(&A);
-    //print_matrix(matrix_A, MSIZE);	
-    //free(matrix_A->data);
-    //free(matrix_A);
 }
