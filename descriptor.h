@@ -15,14 +15,14 @@ typedef struct matrix_descriptor_t
     void* mat;
     int mb; //tile rows
     int nb; //tile columns
-    int msize; //matrix number of elements
-    int bsize; //tile number of elements
+    long int msize; //matrix number of elements  //FIXME size_t
+    long int bsize; //tile number of elements
     int lm; //matrix rows
     int ln; //matrix columns
 } MATRIX_desc;
 
 /* Matrix descriptor initialization */
-MATRIX_desc matrix_desc_init(int mb, int nb, int msize, int bsize, int lm, int ln)
+MATRIX_desc matrix_desc_init(int mb, int nb, long int msize, long int bsize, int lm, int ln)
 {
     MATRIX_desc desc;
     desc.mat = NULL;
@@ -36,7 +36,7 @@ MATRIX_desc matrix_desc_init(int mb, int nb, int msize, int bsize, int lm, int l
 }
 
 /* Matrix descriptor creation */
-int matrix_desc_create(MATRIX_desc **desc, void *mat, int mb, int nb, int msize, int bsize, int lm, int ln)
+int matrix_desc_create(MATRIX_desc **desc, void *mat, int mb, int nb, long int msize, long int bsize, int lm, int ln)
 {
     *desc = (MATRIX_desc*)malloc(sizeof(MATRIX_desc));
     **desc = matrix_desc_init(mb, nb, msize, bsize, lm, ln);
