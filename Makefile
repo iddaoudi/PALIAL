@@ -9,11 +9,11 @@ CFLAGS  = -Wall -ggdb3 \
 LIBS = $(shell pkg-config --libs openblas) $(shell pkg-config --libs lapacke)
 
 MAIN          = main
-TARGET        = main
+TARGET        = palial
 
 all: $(TARGET)
 
-$(TARGET): $(MAIN).c 
+$(TARGET): $(MAIN).c $(wildcard include/*.h src/*.h src/srcqr/*.h src/srclu/*.h) 
 		$(CC) $(CFLAGS) -o $(TARGET) $(MAIN).c $(LIBS)
 
 clean:

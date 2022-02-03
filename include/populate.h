@@ -33,25 +33,33 @@ void hermitian_positive_generator (MATRIX_desc A)
     dA[3] = 3.982519;
 #else
     srand((unsigned int)time(NULL));
-    for (int i = 0; i < A.lm/A.mb; i++)
+    for (int i = 0; i < A.matrix_size/A.tile_size; i++)
     {
-        for (int j = 0; j < A.ln/A.nb; j++)
+        for (int j = 0; j < A.matrix_size/A.tile_size; j++)
         {
             double *dA = A(i, j);
-            for (int k = 0; k < A.mb; k++)
+            for (int k = 0; k < A.tile_size; k++)
             {
-                for (int l = 0; l < A.nb; l++)
+                for (int l = 0; l < A.tile_size; l++)
                 {
                     /* Random diagonal elements on the diagonal tiles of matrix */
                     if (i == j && k == l) 
                     {
+#ifdef IDENTITY
+                        dA[k*A.tile_size + l] = 1.0;
+#else
                         double seed = 173.0;
-                        dA[k*A.mb + l] = ((double)rand()/(double)(RAND_MAX)) * seed;
+                        dA[k*A.tile_size + l] = ((double)rand()/(double)(RAND_MAX)) * seed;
+#endif
                     }
                     /* Fixed small value for all the rest */
                     else
                     {
-                        dA[k*A.mb + l] = 0.5;
+#ifdef IDENTITY
+                        dA[k*A.tile_size + l] = 0.0;
+#else
+                        dA[k*A.tile_size + l] = 0.5;
+#endif
                     }
                 }
             }

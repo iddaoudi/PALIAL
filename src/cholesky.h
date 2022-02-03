@@ -2,23 +2,26 @@
  * File              : cholesky.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 31.01.2022
- * Last Modified Date: 31.01.2022
+ * Last Modified Date: 03.02.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
+
+#include "assert.h"
 
 void cholesky(MATRIX_desc A)
 {
     int k, m, n;
-    for (k = 0; k < MSIZE/BSIZE; k++) //FIXME
+    for (k = 0; k < A.matrix_size/A.tile_size; k++)
     {
         double *tileA = A(k,k);
         int info = LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                 'U', 
-                BSIZE, 
+                A.tile_size,
                 tileA, 
-                BSIZE);
+                A.tile_size);
+        assert(!info);
         
-        for (m = k+1; m < MSIZE/BSIZE; m++)
+        for (m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
             double *tileA = A(k,k);
             double *tileB = A(k,m);
@@ -27,30 +30,30 @@ void cholesky(MATRIX_desc A)
                     CblasUpper, 
                     CblasTrans, 
                     CblasNonUnit, 
-                    BSIZE, 
-                    BSIZE, 
+                    A.tile_size, 
+                    A.tile_size, 
                     1.0, 
                     tileA, 
-                    BSIZE, 
+                    A.tile_size, 
                     tileB, 
-                    BSIZE);			
+                    A.tile_size);			
         }
 
-        for (m = k+1; m < MSIZE/BSIZE; m++)
+        for (m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
             double *tileA = A(k,m);
             double *tileB = A(m,m);
             cblas_dsyrk(CblasColMajor, 
                     CblasUpper, 
                     CblasTrans, 
-                    BSIZE, 
-                    BSIZE, 
+                    A.tile_size, 
+                    A.tile_size, 
                     -1.0, 
                     tileA, 
-                    BSIZE, 
+                    A.tile_size, 
                     1.0, 
                     tileB, 
-                    BSIZE);
+                    A.tile_size);
 
             for (n = k+1; n < m; n++)
             {
@@ -60,17 +63,17 @@ void cholesky(MATRIX_desc A)
                 cblas_dgemm(CblasColMajor, 
                         CblasTrans, 
                         CblasNoTrans, 
-                        BSIZE, 
-                        BSIZE, 
-                        BSIZE, 
+                        A.tile_size, 
+                        A.tile_size, 
+                        A.tile_size, 
                         -1.0, 
                         tileA, 
-                        BSIZE, 
+                        A.tile_size, 
                         tileB, 
-                        BSIZE, 
+                        A.tile_size, 
                         1.0, 
                         tileC, 
-                        BSIZE);
+                        A.tile_size);
             }
         }
     }
