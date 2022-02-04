@@ -6,7 +6,7 @@
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  **/
 
-static inline void *MATRIX_tile_address(MATRIX_desc A, int m, int n)
+inline static void *MATRIX_tile_address(MATRIX_desc A, int m, int n)
 {
     size_t single_element_size = sizeof(double); //FIXME
     size_t offset = 0;

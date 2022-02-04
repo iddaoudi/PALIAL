@@ -49,7 +49,7 @@ void hermitian_positive_generator (MATRIX_desc A)
                         dA[k*A.tile_size + l] = 1.0;
 #else
                         double seed = 173.0;
-                        dA[k*A.tile_size + l] = ((double)rand()/(double)(RAND_MAX)) * seed;
+                        dA[k*A.tile_size + l] = ((double)rand()/(double)(RAND_MAX)) * seed + seed;
 #endif
                     }
                     /* Fixed small value for all the rest */
