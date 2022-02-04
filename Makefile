@@ -2,7 +2,7 @@
 CC = gcc
 
 # Flags
-CFLAGS  = -Wall -ggdb3 \
+CFLAGS  = -O2 -fopenmp \
           $(shell pkg-config --cflags openblas) \
 		  $(shell pkg-config --cflags lapacke)
  

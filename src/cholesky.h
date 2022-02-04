@@ -14,17 +14,22 @@ void cholesky(MATRIX_desc A)
     for (k = 0; k < A.matrix_size/A.tile_size; k++)
     {
         double *tileA = A(k,k);
-        int info = LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
+        int info;
+#pragma omp task depend (inout:tileA[0:A.tile_size*A.tile_size])
+        {
+        info = LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                 'U', 
                 A.tile_size,
                 tileA, 
                 A.tile_size);
+        }
         assert(!info);
         
         for (m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
             double *tileA = A(k,k);
             double *tileB = A(k,m);
+#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size]) depend(inout:tileB[A.tile_size*A.tile_size])
             cblas_dtrsm(CblasColMajor, 
                     CblasLeft, 
                     CblasUpper, 
@@ -43,6 +48,7 @@ void cholesky(MATRIX_desc A)
         {
             double *tileA = A(k,m);
             double *tileB = A(m,m);
+#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size]) depend(inout:tileB[0:A.tile_size*A.tile_size])
             cblas_dsyrk(CblasColMajor, 
                     CblasUpper, 
                     CblasTrans, 
@@ -60,6 +66,7 @@ void cholesky(MATRIX_desc A)
                 double *tileA = A(k,n);
                 double *tileB = A(k,m);
                 double *tileC = A(n,m);
+#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout:tileC[0:A.tile_size*A.tile_size])
                 cblas_dgemm(CblasColMajor, 
                         CblasTrans, 
                         CblasNoTrans, 

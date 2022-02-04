@@ -23,7 +23,7 @@
 //#define SPECIAL4x4 1
 //#define IDENTITY 1
 
-int MSIZE, BSIZE;
+int MSIZE, BSIZE, NTH;
 
 #include "include/descriptor.h"
 #include "include/tile_address.h"
@@ -52,6 +52,7 @@ int PALIAL_allocate_tile (int M, MATRIX_desc **desc, int B)
 
 int main (int argc, char* argv[])
 {
+    NTH = atoi(getenv("OMP_NUM_THREADS"));
     /* Command line arguments parsing */
     int arguments;
     char algorithm[16];
@@ -110,6 +111,8 @@ int main (int argc, char* argv[])
     struct timeval time_start, time_finish;
     if (!strcmp(algorithm, "cholesky"))
     {
+#pragma omp parallel
+#pragma omp master
         gettimeofday(&time_start, NULL);
         cholesky(*A);
         gettimeofday(&time_finish, NULL);
@@ -120,6 +123,8 @@ int main (int argc, char* argv[])
         MATRIX_desc *S = NULL;
         PALIAL_allocate_tile(MSIZE, &S, BSIZE);
         
+#pragma omp parallel
+#pragma omp master       
         gettimeofday(&time_start, NULL);
         qr(*A, *S);
         gettimeofday(&time_finish, NULL);
@@ -129,6 +134,8 @@ int main (int argc, char* argv[])
     }
     else if (!strcmp(algorithm, "lu"))
     {
+#pragma omp parallel
+#pragma omp master
         gettimeofday(&time_start, NULL);
         lu(*A);
         gettimeofday(&time_finish, NULL);
@@ -138,7 +145,7 @@ int main (int argc, char* argv[])
     
     printf("############ PALIAL library ############\n");
     printf("Algorithm, matrix size, tile size, time\n");
-    printf("%s, %d, %d, %fs\n", algorithm, MSIZE, BSIZE, time);
+    printf("%s, %d, %d, %d, %fs\n", algorithm, MSIZE, BSIZE, NTH, time);
     printf("########################################\n");
 
     free(A->matrix);

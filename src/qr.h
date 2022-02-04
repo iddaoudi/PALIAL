@@ -21,8 +21,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
         double *tileS = A(k,k);
         double tho[S.tile_size];
         double work[S.tile_size * S.tile_size];
-        
-        int info = PALIAL_dgeqrt(A.tile_size,
+        int info;
+#pragma omp task depend(inout:tileA[0:A.tile_size*A.tile_size]) depend(out:tileS[0:A.tile_size*S.tile_size])
+        info = PALIAL_dgeqrt(A.tile_size,
                 S.tile_size,
                 tileA,
                 A.tile_size,
@@ -37,8 +38,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileS = S(k,k);
             double *tileB = A(k,n);
             double work[S.tile_size * S.tile_size];
-            
-            int info = PALIAL_dormqr(PALIAL_left,
+            int info;
+#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
+            info = PALIAL_dormqr(PALIAL_left,
                     PALIAL_transpose,
                     A.tile_size,
                     tileA,
@@ -58,8 +60,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileB = A(m,k);
             double tho[S.tile_size];
             double work[S.tile_size * S.tile_size];
-            
-            int info = PALIAL_dtsqrt(A.tile_size,
+            int info;
+#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
+            info = PALIAL_dtsqrt(A.tile_size,
                     tileA,
                     A.tile_size,
                     tileB,
@@ -76,8 +79,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                 double *tileB = A(m,n);
                 double *tileC = A(m,k);
                 double work[S.tile_size * S.tile_size];
-                
-                int info = PALIAL_dtsmqr(PALIAL_left,
+                int info;
+#pragma omp task depend(inout:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(in:tileB[0:S.tile_size*S.tile_size], tileC[0:A.tile_size*S.tile_size])
+                info = PALIAL_dtsmqr(PALIAL_left,
                         PALIAL_transpose,
                         A.tile_size,
                         A.tile_size,
