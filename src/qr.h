@@ -19,38 +19,42 @@ void qr(MATRIX_desc A, MATRIX_desc S)
     {
         double *tileA = A(k,k);
         double *tileS = A(k,k);
-        double tho[S.tile_size];
-        double work[S.tile_size * S.tile_size];
         int info;
-#pragma omp task depend(inout:tileA[0:A.tile_size*A.tile_size]) depend(out:tileS[0:A.tile_size*S.tile_size])
-        info = PALIAL_dgeqrt(A.tile_size,
-                S.tile_size,
-                tileA,
-                A.tile_size,
-                tileS,
-                S.tile_size,
-                &tho[0],
-                &work[0]);
+#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size]) depend(out:tileS[0:A.tile_size*S.tile_size])
+        {
+            double work[S.tile_size * S.tile_size];
+            double tho[S.tile_size];
+            info = PALIAL_dgeqrt(A.tile_size,
+                    S.tile_size,
+                    tileA,
+                    A.tile_size,
+                    tileS,
+                    S.tile_size,
+                    &tho[0],
+                    &work[0]);
+        }
         assert(!info);
         for (n = k+1; n < A.matrix_size/A.tile_size; n++)
         {
             double *tileA = A(k,k);
             double *tileS = S(k,k);
             double *tileB = A(k,n);
-            double work[S.tile_size * S.tile_size];
             int info;
-#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
-            info = PALIAL_dormqr(PALIAL_left,
-                    PALIAL_transpose,
-                    A.tile_size,
-                    tileA,
-                    A.tile_size,
-                    tileS,
-                    S.tile_size,
-                    tileB,
-                    A.tile_size,
-                    &work[0],
-                    S.tile_size);
+#pragma omp task depend(in:tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
+            {
+                double work[S.tile_size * S.tile_size];
+                info = PALIAL_dormqr(PALIAL_left,
+                        PALIAL_transpose,
+                        A.tile_size,
+                        tileA,
+                        A.tile_size,
+                        tileS,
+                        S.tile_size,
+                        tileB,
+                        A.tile_size,
+                        &work[0],
+                        S.tile_size);
+            }
             assert(!info);
         }
         for (m = k+1; m < A.matrix_size/A.tile_size; m++)
@@ -58,19 +62,21 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileA = A(k,k);
             double *tileS = S(m,k);
             double *tileB = A(m,k);
-            double tho[S.tile_size];
-            double work[S.tile_size * S.tile_size];
             int info;
-#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
-            info = PALIAL_dtsqrt(A.tile_size,
-                    tileA,
-                    A.tile_size,
-                    tileB,
-                    A.tile_size,
-                    tileS,
-                    S.tile_size,
-                    &tho[0],
-                    &work[0]);
+#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out:tileS[0:S.tile_size*A.tile_size])
+            {
+                double work[S.tile_size * S.tile_size];
+                double tho[S.tile_size];
+                info = PALIAL_dtsqrt(A.tile_size,
+                        tileA,
+                        A.tile_size,
+                        tileB,
+                        A.tile_size,
+                        tileS,
+                        S.tile_size,
+                        &tho[0],
+                        &work[0]);
+            }
             assert(!info);
             for (n = k+1; n < A.matrix_size/A.tile_size; n++)
             {
@@ -78,25 +84,27 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                 double *tileS = S(m,k);
                 double *tileB = A(m,n);
                 double *tileC = A(m,k);
-                double work[S.tile_size * S.tile_size];
                 int info;
-#pragma omp task depend(inout:tileA[0:A.tile_size*A.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(in:tileB[0:S.tile_size*S.tile_size], tileC[0:A.tile_size*S.tile_size])
-                info = PALIAL_dtsmqr(PALIAL_left,
-                        PALIAL_transpose,
-                        A.tile_size,
-                        A.tile_size,
-                        A.tile_size,
-                        A.tile_size,
-                        tileA,
-                        A.tile_size,
-                        tileB,
-                        A.tile_size,
-                        tileC,
-                        A.tile_size,
-                        tileS,
-                        S.tile_size,
-                        &work[0],
-                        A.tile_size);
+#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in:tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
+                {
+                    double work[S.tile_size * S.tile_size];
+                    info = PALIAL_dtsmqr(PALIAL_left,
+                            PALIAL_transpose,
+                            A.tile_size,
+                            A.tile_size,
+                            A.tile_size,
+                            A.tile_size,
+                            tileA,
+                            A.tile_size,
+                            tileB,
+                            A.tile_size,
+                            tileC,
+                            A.tile_size,
+                            tileS,
+                            S.tile_size,
+                            &work[0],
+                            A.tile_size);
+                }
                 assert(!info);
             }
         }

@@ -94,6 +94,11 @@ int main (int argc, char* argv[])
         }
     }
 
+    if (MSIZE%BSIZE != 0)
+    {
+        printf("Tile size does not divide the matrix size. Aborting...\n");
+        exit(0);
+    }
     /* Structures memory allocation */
     MATRIX_desc *A = NULL;
     double *ptr = 0;
@@ -143,10 +148,11 @@ int main (int argc, char* argv[])
 
     double time = (double) (time_finish.tv_usec - time_start.tv_usec)/1000000 + (double) (time_finish.tv_sec - time_start.tv_sec);
     
-    printf("############ PALIAL library ############\n");
-    printf("Algorithm, matrix size, tile size, time\n");
-    printf("%s, %d, %d, %d, %fs\n", algorithm, MSIZE, BSIZE, NTH, time);
-    printf("########################################\n");
+//    printf("############ PALIAL library ############\n");
+//    printf("Algorithm, matrix size, tile size, time\n");
+//    printf("%s, %d, %d, %d, %f\n", algorithm, MSIZE, BSIZE, NTH, time);
+//    printf("########################################\n");
+    printf("%d, %d, %d, %f\n", MSIZE, BSIZE, NTH, time);
 
     free(A->matrix);
     matrix_desc_destroy(&A);
