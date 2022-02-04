@@ -9,17 +9,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
+#include <getopt.h>
+#include <sys/time.h>
+
 #include "lapacke.h"
 #include "cblas.h"
-
-#define MSIZE 8192
-#define BSIZE 512
+#include "omp.h"
 
 #define A(m,n) MATRIX_tile_address(A, m, n)
 #define B(m,n) MATRIX_tile_address(B, m, n)
 #define S(m,n) MATRIX_tile_address(S, m, n)
 //#define SPECIAL4x4 1
-#define IDENTITY 1
+//#define IDENTITY 1
+
+int MSIZE, BSIZE;
 
 #include "include/descriptor.h"
 #include "include/tile_address.h"
@@ -46,11 +50,51 @@ int PALIAL_allocate_tile (int M, MATRIX_desc **desc, int B)
     return 0;
 }
 
-int main ()
+int main (int argc, char* argv[])
 {
+    /* Command line arguments parsing */
+    int arguments;
+    char algorithm[16];
+    struct option long_options[] = {
+        {"Algorithm", required_argument, NULL, 'a'},
+        {"Matrix size", required_argument, NULL, 'm'},
+        {"Tile size", required_argument, NULL, 'b'},
+        {NULL, no_argument, NULL, 0}
+    };
+    if (argc < 2)
+    {
+        printf("Missing arguments.\n");
+        printf("Aborting...\n");
+        exit(0);
+    }
+    while ((arguments = getopt_long(argc, argv, "a:m:b:h:", long_options, NULL)) != -1)
+    {
+        if (optind > 2)
+        {
+            switch(arguments)
+            {
+                case 'a':
+                    if (optarg) strcpy(algorithm,optarg);
+                    break;
+                case 'm':
+                    if (optarg) MSIZE = atoi(optarg);
+                    break;
+                case 'b':
+                    if (optarg) BSIZE = atoi(optarg);
+                    break;
+                case 'h':
+                    printf("HELP\n");
+                    exit(0);
+                case '?':
+                    printf("Invalid arguments.\n");
+                    printf("Aborting...\n");
+                    exit(0);
+            }
+        }
+    }
+
     /* Structures memory allocation */
     MATRIX_desc *A = NULL;
-    MATRIX_desc *S = NULL;
     double *ptr = 0;
     int error = posix_memalign((void**)&ptr, getpagesize(), MSIZE * MSIZE * sizeof(double));
     if (error)
@@ -62,17 +106,41 @@ int main ()
     matrix_desc_create(&A, ptr, BSIZE, MSIZE*MSIZE, BSIZE*BSIZE, MSIZE);
     /* Creating Hermitian positive matrix */
     hermitian_positive_generator(*A);
-    /* Workspace allocation for QR */
-    PALIAL_allocate_tile(MSIZE, &S, BSIZE);
 
-    //print_matrix(*A);
+    struct timeval time_start, time_finish;
+    if (!strcmp(algorithm, "cholesky"))
+    {
+        gettimeofday(&time_start, NULL);
+        cholesky(*A);
+        gettimeofday(&time_finish, NULL);
+    }
+    else if (!strcmp(algorithm, "qr"))
+    {
+        /* Workspace allocation for QR */
+        MATRIX_desc *S = NULL;
+        PALIAL_allocate_tile(MSIZE, &S, BSIZE);
+        
+        gettimeofday(&time_start, NULL);
+        qr(*A, *S);
+        gettimeofday(&time_finish, NULL);
+        
+        free(S->matrix);
+        matrix_desc_destroy(&S);
+    }
+    else if (!strcmp(algorithm, "lu"))
+    {
+        gettimeofday(&time_start, NULL);
+        lu(*A);
+        gettimeofday(&time_finish, NULL);
+    }
+
+    double time = (double) (time_finish.tv_usec - time_start.tv_usec)/1000000 + (double) (time_finish.tv_sec - time_start.tv_sec);
     
-    //cholesky(*A);
-    //qr(*A, *S);
-    lu(*A);
+    printf("############ PALIAL library ############\n");
+    printf("Algorithm, matrix size, tile size, time\n");
+    printf("%s, %d, %d, %fs\n", algorithm, MSIZE, BSIZE, time);
+    printf("########################################\n");
 
     free(A->matrix);
-    free(S->matrix);
     matrix_desc_destroy(&A);
-    matrix_desc_destroy(&S);
 }
