@@ -16,18 +16,25 @@
 #include "lapacke.h"
 #include "cblas.h"
 #include "omp.h"
+#include "src/cvector.h"
+
+int MSIZE, BSIZE, NTH;
+
+#define PALIAL_TRACE 1
+#ifdef PALIAL_TRACE
+cvector_vector_type(char*) ompt_task_names = NULL;
+#include "trace/trace.h"
+#endif
 
 #define A(m,n) MATRIX_tile_address(A, m, n)
 #define B(m,n) MATRIX_tile_address(B, m, n)
 #define S(m,n) MATRIX_tile_address(S, m, n)
+
 //#define SPECIAL4x4 1
 //#define IDENTITY 1
 
-int MSIZE, BSIZE, NTH;
-
 #include "include/descriptor.h"
 #include "include/tile_address.h"
-
 #include "include/print.h"
 #include "include/populate.h"
 
@@ -37,7 +44,7 @@ int MSIZE, BSIZE, NTH;
 
 int PALIAL_allocate_tile (int M, MATRIX_desc **desc, int B)
 {
-    int MT = M/B; //FIXME no need for M and N (squared matrix)
+    int MT = M/B;
     *desc = (MATRIX_desc*)malloc(sizeof(MATRIX_desc));
     if (*desc == NULL)
     {
@@ -154,6 +161,20 @@ int main (int argc, char* argv[])
 //    printf("########################################\n");
     printf("%d, %d, %d, %f\n", MSIZE, BSIZE, NTH, time);
 
+//    for (int i = 0; i < cvector_size(ompt_tasks); i++)
+//    {
+//        printf("task id   : %" PRIu64 "\n", ompt_tasks[i]->id);
+//        printf("task name : %s\n", ompt_tasks[i]->name);
+//        printf("task ndep : %d\n", ompt_tasks[i]->n_dependences);
+//        for (int j = 0; j < ompt_tasks[i]->n_dependences; j++)
+//        {
+//          printf("task access mode   : %s\n", ompt_tasks[i]->access_mode[j]);
+//        }
+//        printf("task sched: %d\n", ompt_tasks[i]->scheduled);
+//        printf("task node : %d\n", ompt_tasks[i]->node);
+//        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+//    }
+    
     free(A->matrix);
     matrix_desc_destroy(&A);
 }
