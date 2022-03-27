@@ -25,6 +25,7 @@ typedef struct
     int task_create_finalize;
     int task_schedule;
     int task_dependence;
+    int dependences;
     int implicit_task_scope_begin;
     int implicit_task_scope_end;
     int initial_task_scope_begin;
@@ -53,6 +54,7 @@ void sum_of_callbacks (callback_counter_type *c_counter)
         c_counter[0]._cc.task_create_finalize      += c_counter[i]._cc.task_create_finalize;
         c_counter[0]._cc.task_schedule             += c_counter[i]._cc.task_schedule;
         c_counter[0]._cc.task_dependence           += c_counter[i]._cc.task_dependence;
+        c_counter[0]._cc.dependences               += c_counter[i]._cc.dependences;
     }
 //    printf("Total parallel_begin callbacks: %d\n", c_counter[0]._cc.parallel_begin);
 //    printf("Total thread_begin callbacks  : %d\n", c_counter[0]._cc.thread_begin);
@@ -66,7 +68,8 @@ void sum_of_callbacks (callback_counter_type *c_counter)
 //    printf("Total task_finalize callbacks : %d\n", c_counter[0]._cc.task_create_finalize);
 
 //    printf("Total task_schedule callbacks : %d\n", c_counter[0]._cc.task_schedule);
-    printf("Total task_dependence callbacks : %d\n", c_counter[0]._cc.task_dependence);
+//    printf("Total task_dependence callbacks : %d\n", c_counter[0]._cc.task_dependence);
+//    printf("Total dependences callbacks : %d\n", c_counter[0]._cc.dependences);
 
 //    printf("Total parallel_end callbacks  : %d\n", c_counter[0]._cc.parallel_end);
 //    printf("Total thread_end callbacks    : %d\n", c_counter[0]._cc.thread_end);

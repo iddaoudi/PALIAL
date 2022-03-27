@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <inttypes.h>
 #define _GNU_SOURCE
 
 #include <omp.h>
 #include <omp-tools.h>
+#include "../src/cvector.h"
 
 #define MAX_THREADS     128
 #define MAX_MODES       5
@@ -39,51 +41,6 @@ typedef struct {
 
 cvector_vector_type(palial_task_t*) ompt_tasks = NULL;
 
-// ompt_callback_implicit_task is used for callbacks that are dispatched when initial tasks and implicit tasks are generated and completed
-//static void trace_ompt_callback_implicit_task (ompt_scope_endpoint_t endpoint,
-//        ompt_data_t *parallel_data,
-//        ompt_data_t *task_data,
-//        unsigned int actual_parallelism,
-//        unsigned int index,
-//        int flags)
-//{
-//    unsigned int thread_id = ompt_get_thread_data()->value;
-//    if (flags & ompt_task_implicit)
-//    {
-//        switch(endpoint)
-//        {
-//            case ompt_scope_begin:
-//                c_counter[thread_id]._cc.implicit_task_scope_begin += 1;
-//                task_data->value = ompt_get_unique_id();
-//                palial_task_t *task = (palial_task_t*)malloc(sizeof(palial_task_t));
-//                task_data->ptr = task;
-//                task->id = task_data->value;
-//                printf("implicit task id: %d\n", task->id);
-//                break;
-//            case ompt_scope_end:
-//                c_counter[thread_id]._cc.implicit_task_scope_end += 1;
-//                break;
-//        }
-//    }
-//    else if (flags & ompt_task_initial)
-//    {
-//        switch(endpoint)
-//        {
-//            case ompt_scope_begin:
-//                c_counter[thread_id]._cc.initial_task_scope_begin += 1;
-//                task_data->value = ompt_get_unique_id();
-//                palial_task_t *task = (palial_task_t*)malloc(sizeof(palial_task_t));
-//                task_data->ptr = task;
-//                task->id = task_data->value;
-//                printf("implicit task id: %d\n", task->id);
-//                break;
-//            case ompt_scope_end:
-//                c_counter[thread_id]._cc.initial_task_scope_end += 1;
-//                break;
-//        }
-//    }
-//}
-
 // ompt_callback_task_create is used for callbacks that are dispatched when task regions or initial tasks are generated
 static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data,
         const ompt_frame_t *encountering_task_frame,
@@ -106,7 +63,8 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
     task->id = new_task_data->value;
     if (has_dependences != 0)
     {
-        task->name = ompt_task_names[counter];
+        if (cvector_size(ompt_task_names) != 0)
+            task->name = ompt_task_names[counter];
         counter++;
     }
     task->task_ptr = codeptr_ra;
@@ -129,10 +87,10 @@ static void trace_ompt_callback_task_schedule (ompt_data_t *prior_task_data,
         if (ompt_tasks[i]->id == prior_task_data->value)
         {
             task = ompt_tasks[i];
+            task->scheduled = true;
             break;
         }
     }
-    task->scheduled = true;
 }
 
 // ompt_callback_dependences is used for callbacks that are related to dependences and that are dispatched when new tasks are generated
@@ -140,6 +98,8 @@ static void trace_ompt_callback_dependences (ompt_data_t *task_data,
         const ompt_dependence_t *deps,
         int ndeps)
 {
+    unsigned int thread_id = ompt_get_thread_data()->value;
+    c_counter[thread_id]._cc.dependences += 1;
     palial_task_t *task;
     // Find the task
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
@@ -168,13 +128,15 @@ static void trace_ompt_callback_dependences (ompt_data_t *task_data,
             exit(EXIT_FAILURE);
         }
     }
-    printf("void pointer: %p\n", deps->variable.ptr);
 }
 
 static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
         ompt_data_t *sink_task_data)
 {
-    printf("here");
+    printf("Called task_dependences\n");
+    unsigned int thread_id = ompt_get_thread_data()->value;
+    c_counter[thread_id]._cc.task_dependence += 1;
+    printf("hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n");
     palial_task_t *src_task, *sink_task;
     // Find the task
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
@@ -201,7 +163,7 @@ int ompt_initialize (ompt_function_lookup_t lookup,
         int initial_device_num,
         ompt_data_t *data_from_tool)
 {
-    printf("Tool initialized.\n");
+    //printf("Tool initialized.\n");
     // Runtime entrypoint
     ompt_set_callback_t ompt_set_callback =(ompt_set_callback_t) lookup("ompt_set_callback");
     ompt_get_thread_data = (ompt_get_thread_data_t) lookup("ompt_get_thread_data");
@@ -209,15 +171,14 @@ int ompt_initialize (ompt_function_lookup_t lookup,
     ompt_get_proc_id     = (ompt_get_proc_id_t) lookup("ompt_get_proc_id");
 
     // Callbacks registering
-    //register_callback(ompt_callback_thread_begin);
-    //register_callback(ompt_callback_thread_end);
-    //register_callback(ompt_callback_parallel_begin);
-    //register_callback(ompt_callback_parallel_end);
-    //register_callback(ompt_callback_implicit_task);
     register_callback(ompt_callback_task_create);
     register_callback(ompt_callback_task_dependence);
     register_callback(ompt_callback_task_schedule);
     register_callback(ompt_callback_dependences);
+    
+    //ompt_callback_t f_ompt_callback_dependences = &trace_ompt_callback_dependences;
+    //info = ompt_set_callback(ompt_callback_dependences, f_ompt_callback_dependences);
+    //printf("Dependences: %d\n", info);
 
     c_counter = calloc(MAX_THREADS, sizeof(callback_counter_type));
     data_from_tool->ptr = c_counter;
@@ -237,7 +198,6 @@ void ompt_finalize (ompt_data_t *data_from_tool)
 
 ompt_start_tool_result_t *ompt_start_tool (unsigned int omp_version, const char *runtime_version)
 {
-    printf("HELLO\n");
     static double time = 0;
     time = omp_get_wtime();
     static ompt_start_tool_result_t ompt_start_tool_result = {&ompt_initialize, &ompt_finalize, {.value = 0}};
