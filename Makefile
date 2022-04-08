@@ -1,11 +1,11 @@
-CC=clang-15
-CXX=clang++-15
+CC=clang
+CXX=clang++
 FLAGS_OPENMP?=-fopenmp
-CFLAGS+=-std=gnu99 -ggdb -I/home/xps/openmp/build/include
+CFLAGS+=-std=gnu99 -ggdb 
 CXXFLAGS+=-stdc++11 -g
-OPENMP_LIBRARY=-L/home/xps/openmp/build/lib -lomp
-FLAGS_OPENMP+=$(OPENMP_LIBRARY)
-LAPACKE_LIB=$(shell pkg-config --libs openblas) $(shell pkg-config --libs lapacke)
+OPENMP_LIBRARY=-lomp -I/home/dell/llvm-project/build-openmp/include -L/home/dell/llvm-project/build-openmp/lib
+#FLAGS_OPENMP+=$(OPENMP_LIBRARY)
+LAPACKE_LIB=$(shell pkg-config --libs cblas) $(shell pkg-config --libs lapacke)
 
 ######################## OMP_TOOL_LIBRARIES #######################
 
@@ -32,7 +32,7 @@ LAPACKE_LIB=$(shell pkg-config --libs openblas) $(shell pkg-config --libs lapack
 all: palial
 
 palial: main.c
-	$(CC) $(CFLAGS) $(FLAGS_OPENMP) -DDYN_TOOL $< -o $@ $(LAPACKE_LIB)
+	$(CC) $(CFLAGS) $(FLAGS_OPENMP) $< -o $@ $(OPENMP_LIBRARY) $(LAPACKE_LIB)
 
 .PHONY: all palial clean
 
