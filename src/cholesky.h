@@ -2,7 +2,7 @@
  * File              : cholesky.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 31.01.2022
- * Last Modified Date: 04.04.2022
+ * Last Modified Date: 16.04.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -17,17 +17,13 @@ void cholesky(MATRIX_desc A)
       cvector_push_back(ompt_task_names, "potrf");
 #pragma omp task depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
-         LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
+          int cpu = sched_getcpu();
+          printf("cpu: %d\n", cpu);
+          LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                'U', 
                A.tile_size,
                tileA, 
                A.tile_size);
-#ifdef PALIAL_TRACE
-         unsigned int cpu, node;
-         getcpu(&cpu, &node);
-         cvector_push_back(ompt_cpu_locations, cpu);
-         cvector_push_back(ompt_node_locations, node);
-#endif
       }
       for (m = k+1; m < A.matrix_size/A.tile_size; m++)
       {
@@ -36,6 +32,8 @@ void cholesky(MATRIX_desc A)
          cvector_push_back(ompt_task_names, "trsm");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
+            int cpu = sched_getcpu();
+            printf("cpu: %d\n", cpu);
             cblas_dtrsm(CblasColMajor, 
                   CblasLeft, 
                   CblasUpper, 
@@ -48,12 +46,6 @@ void cholesky(MATRIX_desc A)
                   A.tile_size, 
                   tileB, 
                   A.tile_size);
-#ifdef PALIAL_TRACE
-            unsigned int cpu, node;
-            getcpu(&cpu, &node);
-            cvector_push_back(ompt_cpu_locations, cpu);   
-            cvector_push_back(ompt_node_locations, node);
-#endif
          }
       }
 
@@ -64,6 +56,8 @@ void cholesky(MATRIX_desc A)
          cvector_push_back(ompt_task_names, "syrk");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
+            int cpu = sched_getcpu();
+            printf("cpu: %d\n", cpu);
             cblas_dsyrk(CblasColMajor, 
                   CblasUpper, 
                   CblasTrans, 
@@ -75,12 +69,6 @@ void cholesky(MATRIX_desc A)
                   1.0, 
                   tileB, 
                   A.tile_size);
-#ifdef PALIAL_TRACE
-            unsigned int cpu, node;
-            getcpu(&cpu, &node);
-            cvector_push_back(ompt_cpu_locations, cpu);
-            cvector_push_back(ompt_node_locations, node);
-#endif
          }
 
          for (n = k+1; n < m; n++)
@@ -91,7 +79,9 @@ void cholesky(MATRIX_desc A)
             cvector_push_back(ompt_task_names, "gemm");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
             {
-               cblas_dgemm(CblasColMajor, 
+                int cpu = sched_getcpu();
+                printf("cpu: %d\n", cpu);
+                cblas_dgemm(CblasColMajor, 
                      CblasTrans, 
                      CblasNoTrans, 
                      A.tile_size, 
@@ -105,12 +95,6 @@ void cholesky(MATRIX_desc A)
                      1.0, 
                      tileC, 
                      A.tile_size);
-#ifdef PALIAL_TRACE
-               unsigned int cpu, node;
-               getcpu(&cpu, &node);
-               cvector_push_back(ompt_cpu_locations, cpu);
-               cvector_push_back(ompt_node_locations, node);
-#endif
             }
          }
       }
