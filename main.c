@@ -7,6 +7,7 @@
  **/
 
 #define _GNU_SOURCE
+#define LOGTRACE 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,7 +24,6 @@
 
 int MSIZE, BSIZE, NTH;
 
-//#include "callback.h"
 #define PALIAL_TRACE 1
 #ifdef PALIAL_TRACE
 cvector_vector_type(char*) ompt_task_names     = NULL;
@@ -178,7 +178,8 @@ int main (int argc, char* argv[])
    //    printf("########################################\n");
    //    printf("%d, %d, %d, %f\n", MSIZE, BSIZE, NTH, time);
    //
-       for (int i = 0; i < cvector_size(ompt_tasks); i++)
+#ifdef LOGTRACE 
+   for (int i = 0; i < cvector_size(ompt_tasks); i++)
        {
            printf("Task id                         : %" PRIu64 "\n", ompt_tasks[i]->id);
            printf("Task name                       : %s\n", ompt_tasks[i]->name);
@@ -207,6 +208,7 @@ int main (int argc, char* argv[])
            printf("\n");
            printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
        }
+#endif
 
 //   printf("size of ompt_cpu_locations: %d\n", cvector_size(ompt_cpu_locations));    
 //   printf("size of ompt_task_names: %d\n", cvector_size(ompt_task_names));

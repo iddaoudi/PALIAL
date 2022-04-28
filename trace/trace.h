@@ -38,7 +38,7 @@ typedef struct {
    int               cpu;
    int               node;
    int               n_task_dependences;
-   uint64_t*         task_dependences;
+   int               task_dependences[MAX_MODES];
 } palial_task_t;
 
 cvector_vector_type(palial_task_t*) ompt_tasks = NULL;
@@ -60,14 +60,13 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
       c_counter[thread_id]._cc.task_create_finalize += 1;
    new_task_data->value = ompt_get_unique_id();
 
-   palial_task_t *task = (palial_task_t*)malloc(sizeof(palial_task_t));
+   palial_task_t* task = (palial_task_t*)malloc(sizeof(*task));
    new_task_data->ptr = task;
    task->id = new_task_data->value;
    if (has_dependences != 0)
    {
       if (cvector_size(ompt_task_names) != 0)
       {
-         //strcpy(task->name, ompt_task_names[counter]); 
          task->name = ompt_task_names[counter];
          //task->cpu  = ompt_cpu_locations[counter]; 
          //task->node = ompt_node_locations[counter]; 
@@ -157,11 +156,8 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
          break;
       }
    }
-   int counter = sink_task->n_task_dependences;
-   //printf("counter: %d\n", sink_task->n_task_dependences);
-   //printf("name: %s\n", sink_task->name);
-   sink_task->task_dependences = calloc(MAX_MODES, sizeof(uint64_t));
-   sink_task->task_dependences[counter] = src_task->id;
+   int count = sink_task->n_task_dependences;
+   sink_task->task_dependences[count] = src_task->id;
    sink_task->n_task_dependences++;
 }
 
