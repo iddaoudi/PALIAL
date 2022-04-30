@@ -14,11 +14,10 @@
 
 void qr(MATRIX_desc A, MATRIX_desc S)
 {
-    int k, m, n;
-    for (k = 0; k < A.matrix_size/A.tile_size; k++)
+    for (int k = 0; k < A.matrix_size/A.tile_size; k++)
     {
         double *tileA = A(k,k);
-        double *tileS = A(k,k);
+        double *tileS = S(k,k);
 #ifdef PALIAL_TRACE
         cvector_push_back(ompt_task_names, "geqrt");
 #endif
@@ -35,7 +34,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                     &tho[0],
                     &work[0]);
         }
-        for (n = k+1; n < A.matrix_size/A.tile_size; n++)
+        for (int n = k+1; n < A.matrix_size/A.tile_size; n++)
         {
             double *tileA = A(k,k);
             double *tileS = S(k,k);
@@ -59,7 +58,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         S.tile_size);
             }
         }
-        for (m = k+1; m < A.matrix_size/A.tile_size; m++)
+        for (int m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
             double *tileA = A(k,k);
             double *tileS = S(m,k);
@@ -81,7 +80,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         &tho[0],
                         &work[0]);
             }
-            for (n = k+1; n < A.matrix_size/A.tile_size; n++)
+            for (int n = k+1; n < A.matrix_size/A.tile_size; n++)
             {
                 double *tileA = A(k,n);
                 double *tileS = S(m,k);
