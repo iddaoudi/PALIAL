@@ -1,11 +1,15 @@
-CC=clang
-CXX=clang++
+# OMPT doesn't seem to be working properly with clang-15
+# We will only be using clang-12 for now, until we inverstigate further about compiler compatibilities
+CC=clang-12
+CXX=clang++-12
+
+
 FLAGS_OPENMP?=-fopenmp
 CFLAGS+=-std=gnu99 -ggdb 
 CXXFLAGS+=-stdc++11 -g
-OPENMP_LIBRARY=-lomp -I/home/dell/llvm-project/build-openmp/include -L/home/dell/llvm-project/build-openmp/lib
+OPENMP_LIBRARY=-lomp -I/home/xps/Work/llvm-project/build-openmp/include -L/home/xps/Work/llvm-project/build-openmp/lib
 #FLAGS_OPENMP+=$(OPENMP_LIBRARY)
-LAPACKE_LIB=$(shell pkg-config --libs cblas) $(shell pkg-config --libs lapacke)
+LAPACKE_LIB=$(shell pkg-config --libs openblas) $(shell pkg-config --libs lapacke)
 
 ######################## OMP_TOOL_LIBRARIES #######################
 
