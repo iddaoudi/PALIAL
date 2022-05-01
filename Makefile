@@ -2,8 +2,6 @@
 # We will only be using clang-12 for now, until we inverstigate further about compiler compatibilities
 CC=clang-12
 CXX=clang++-12
-
-
 FLAGS_OPENMP?=-fopenmp
 CFLAGS+=-std=gnu99 -ggdb 
 CXXFLAGS+=-stdc++11 -g
@@ -35,7 +33,7 @@ LAPACKE_LIB=$(shell pkg-config --libs openblas) $(shell pkg-config --libs lapack
 
 all: palial
 
-palial: main.c
+palial: main.c $(wildcard include/*.h src/*.h src/srcqr/*.h src/srclu/*.h)
 	$(CC) $(CFLAGS) $(FLAGS_OPENMP) $< -o $@ $(OPENMP_LIBRARY) $(LAPACKE_LIB)
 
 .PHONY: all palial clean

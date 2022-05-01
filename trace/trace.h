@@ -26,19 +26,19 @@ int counter = 0;
 #include "parallel_beginend.h"
 
 typedef struct {
-   const void        *task_ptr;
-   const char*       name;
-   uint64_t          id;
-   int               n_dependences;
-   ompt_dependence_t *dependences;
-   char              access_mode[MAX_MODES][MAX_STRING_SIZE];
-   double            start_time;
-   double            end_time;
-   bool              scheduled; // if = 1, task is completed
-   int               cpu;
-   int               node;
-   int               n_task_dependences;
-   int               task_dependences[MAX_MODES];
+   const void*        task_ptr;
+   const char*        name;
+   uint64_t           id;
+   int                n_dependences;
+   ompt_dependence_t* dependences;
+   char               access_mode[MAX_MODES][MAX_STRING_SIZE];
+   double             start_time;
+   double             end_time;
+   bool               scheduled; // if = 1, task is completed
+   int                n_task_dependences;
+   int                task_dependences[MAX_MODES];
+   int                cpu;
+   int                node;
 } palial_task_t;
 
 cvector_vector_type(palial_task_t*) ompt_tasks = NULL;
@@ -73,7 +73,15 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
       }
       counter++;
    }
-   task->task_ptr = codeptr_ra;
+   task->task_ptr           = codeptr_ra;
+   task->n_dependences      = 0;
+   task->dependences        = NULL;
+   task->start_time         = 0;
+   task->end_time           = 0;
+   task->scheduled          = false;
+   task->n_task_dependences = 0;
+   task->cpu                = 0;
+   task->node               = 0;
    cvector_push_back(ompt_tasks, task);
 }
 
@@ -138,7 +146,8 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
 {
    unsigned int thread_id = ompt_get_thread_data()->value;
    c_counter[thread_id]._cc.task_dependence += 1;
-   palial_task_t *src_task, *sink_task;
+   palial_task_t *src_task  = NULL;
+   palial_task_t *sink_task = NULL;
    // Find the task
    for (int i = 0; i < cvector_size(ompt_tasks); i++)
    {
@@ -154,11 +163,15 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
       {
          sink_task = ompt_tasks[i];
          break;
+         break;
       }
    }
-   int count = sink_task->n_task_dependences;
-   sink_task->task_dependences[count] = src_task->id;
-   sink_task->n_task_dependences++;
+   if (sink_task != NULL && src_task != NULL)
+   {
+        int count = sink_task->n_task_dependences;
+        sink_task->task_dependences[count] = src_task->id;
+        sink_task->n_task_dependences += 1;
+   }
 }
 
 int ompt_initialize (ompt_function_lookup_t lookup,

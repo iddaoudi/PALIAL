@@ -16,7 +16,7 @@ void lu (MATRIX_desc A)
 #ifdef PALIAL_TRACE
         cvector_push_back(ompt_task_names, "getrf");
 #endif
-#pragma omp task depend(inout:tileA[0:A.tile_size*A.tile_size])
+#pragma omp task depend(inout : tileA[0])
         PALIAL_dgetrf(A.tile_size,
                 tileA,
                 A.tile_size);
@@ -27,7 +27,7 @@ void lu (MATRIX_desc A)
 #ifdef PALIAL_TRACE
             cvector_push_back(ompt_task_names, "trsm");
 #endif
-#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size]) depend(inout:tileB[A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[A.tile_size*A.tile_size])
             cblas_dtrsm(CblasColMajor,
                     CblasRight,
                     CblasUpper,
@@ -48,7 +48,7 @@ void lu (MATRIX_desc A)
 #ifdef PALIAL_TRACE
             cvector_push_back(ompt_task_names, "trsm");
 #endif
-#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size]) depend(inout:tileB[A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[A.tile_size*A.tile_size])
             cblas_dtrsm(CblasColMajor,
                     CblasLeft,
                     CblasLower,
@@ -69,7 +69,7 @@ void lu (MATRIX_desc A)
 #ifdef PALIAL_TRACE
                 cvector_push_back(ompt_task_names, "gemm");
 #endif
-#pragma omp task depend(in:tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout:tileC[0:A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
                 cblas_dgemm(CblasColMajor,
                         CblasNoTrans,
                         CblasNoTrans,

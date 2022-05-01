@@ -24,11 +24,12 @@
 
 int MSIZE, BSIZE, NTH;
 
-#define PALIAL_TRACE 1
-#ifdef PALIAL_TRACE
 cvector_vector_type(char*) ompt_task_names     = NULL;
 cvector_vector_type(int  ) ompt_cpu_locations  = NULL;
 cvector_vector_type(int  ) ompt_node_locations = NULL;
+
+#define PALIAL_TRACE 1
+#ifdef PALIAL_TRACE
 #include "trace/trace.h"
 #endif
 
@@ -126,11 +127,6 @@ int main (int argc, char* argv[])
    /* Creating Hermitian positive matrix */
    hermitian_positive_generator(*A);
 
-   double *vec = malloc(10*sizeof(double));
-   for (int i = 0; i < 10; i++)
-   {
-      vec[i] = 0.0;
-   }
    struct timeval time_start, time_finish;
    if (!strcmp(algorithm, "cholesky"))
    {
@@ -147,7 +143,6 @@ int main (int argc, char* argv[])
       /* Workspace allocation for QR */
       MATRIX_desc *S = NULL;
       PALIAL_allocate_tile(MSIZE, &S, BSIZE);
-
 #pragma omp parallel
 #pragma omp master
       {
@@ -212,6 +207,11 @@ int main (int argc, char* argv[])
 
 //   printf("size of ompt_cpu_locations: %d\n", cvector_size(ompt_cpu_locations));    
 //   printf("size of ompt_task_names: %d\n", cvector_size(ompt_task_names));
+   for (int i = 0; i < cvector_size(ompt_tasks); i++)
+   {
+       free(ompt_tasks[i]->dependences);
+       free(ompt_tasks[i]);
+   }
    free(A->matrix);
    matrix_desc_destroy(&A);
    cvector_free(ompt_task_names);

@@ -14,14 +14,15 @@
 
 void qr(MATRIX_desc A, MATRIX_desc S)
 {
-    for (int k = 0; k < A.matrix_size/A.tile_size; k++)
+    int k, n, m;
+    for (k = 0; k < A.matrix_size/A.tile_size; k++)
     {
         double *tileA = A(k,k);
         double *tileS = S(k,k);
 #ifdef PALIAL_TRACE
         cvector_push_back(ompt_task_names, "geqrt");
 #endif
-#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size]) depend(out:tileS[0:A.tile_size*S.tile_size])
+#pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size]) depend(out : tileS[0:A.tile_size*S.tile_size])
         {
             double tho[S.tile_size];
             double work[S.tile_size * S.tile_size];
@@ -34,7 +35,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                     &tho[0],
                     &work[0]);
         }
-        for (int n = k+1; n < A.matrix_size/A.tile_size; n++)
+        for (n = k+1; n < A.matrix_size/A.tile_size; n++)
         {
             double *tileA = A(k,k);
             double *tileS = S(k,k);
@@ -42,7 +43,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
 #ifdef PALIAL_TRACE
             cvector_push_back(ompt_task_names, "ormqr");
 #endif
-#pragma omp task depend(in:tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout:tileB[0:S.tile_size*S.tile_size])
+#pragma omp task depend(in : tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout : tileB[0:S.tile_size*S.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
                 PALIAL_dormqr(PALIAL_left,
@@ -58,7 +59,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         S.tile_size);
             }
         }
-        for (int m = k+1; m < A.matrix_size/A.tile_size; m++)
+        for (m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
             double *tileA = A(k,k);
             double *tileS = S(m,k);
@@ -66,7 +67,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
 #ifdef PALIAL_TRACE
             cvector_push_back(ompt_task_names, "tsqrt");
 #endif
-#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out:tileS[0:S.tile_size*A.tile_size])
+#pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out : tileS[0:S.tile_size*A.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
                 double tho[S.tile_size];
@@ -80,7 +81,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         &tho[0],
                         &work[0]);
             }
-            for (int n = k+1; n < A.matrix_size/A.tile_size; n++)
+            for (n = k+1; n < A.matrix_size/A.tile_size; n++)
             {
                 double *tileA = A(k,n);
                 double *tileS = S(m,k);
@@ -89,7 +90,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
 #ifdef PALIAL_TRACE
                 cvector_push_back(ompt_task_names, "tsmqr");
 #endif
-#pragma omp task depend(inout:tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in:tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
+#pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in : tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
                 {
                     double work[S.tile_size * S.tile_size];
                     PALIAL_dtsmqr(PALIAL_left,
@@ -112,5 +113,4 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             }
         }
     }
-
 }
