@@ -7,6 +7,7 @@
  */
 
 #include "assert.h"
+#include "../include/common.h"
 
 void cholesky(MATRIX_desc A)
 {
@@ -14,11 +15,10 @@ void cholesky(MATRIX_desc A)
    for (k = 0; k < A.matrix_size/A.tile_size; k++)
    {
       double *tileA = A(k,k);
-      cvector_push_back(ompt_task_names, "potrf");
+      upstream_palial_set_task_name("potrf");
 #pragma omp task depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
           int cpu = sched_getcpu();
-          printf("cpu: %d\n", cpu);
           LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                'U', 
                A.tile_size,
@@ -29,11 +29,10 @@ void cholesky(MATRIX_desc A)
       {
          double *tileA = A(k,k);
          double *tileB = A(k,m);
-         cvector_push_back(ompt_task_names, "trsm");
+         upstream_palial_set_task_name("trsm");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             int cpu = sched_getcpu();
-            printf("cpu: %d\n", cpu);
             cblas_dtrsm(CblasColMajor, 
                   CblasLeft, 
                   CblasUpper, 
@@ -53,11 +52,10 @@ void cholesky(MATRIX_desc A)
       {
          double *tileA = A(k,m);
          double *tileB = A(m,m);
-         cvector_push_back(ompt_task_names, "syrk");
+         upstream_palial_set_task_name("syrk");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             int cpu = sched_getcpu();
-            printf("cpu: %d\n", cpu);
             cblas_dsyrk(CblasColMajor, 
                   CblasUpper, 
                   CblasTrans, 
@@ -76,11 +74,10 @@ void cholesky(MATRIX_desc A)
             double *tileA = A(k,n);
             double *tileB = A(k,m);
             double *tileC = A(n,m);
-            cvector_push_back(ompt_task_names, "gemm");
+            upstream_palial_set_task_name("gemm");
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
             {
                 int cpu = sched_getcpu();
-                printf("cpu: %d\n", cpu);
                 cblas_dgemm(CblasColMajor, 
                      CblasTrans, 
                      CblasNoTrans, 

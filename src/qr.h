@@ -19,9 +19,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
     {
         double *tileA = A(k,k);
         double *tileS = S(k,k);
-#ifdef PALIAL_TRACE
-        cvector_push_back(ompt_task_names, "geqrt");
-#endif
+        upstream_palial_set_task_name("geqrt");
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size]) depend(out : tileS[0:A.tile_size*S.tile_size])
         {
             double tho[S.tile_size];
@@ -40,9 +38,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileA = A(k,k);
             double *tileS = S(k,k);
             double *tileB = A(k,n);
-#ifdef PALIAL_TRACE
-            cvector_push_back(ompt_task_names, "ormqr");
-#endif
+            upstream_palial_set_task_name("ormqr");
 #pragma omp task depend(in : tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout : tileB[0:S.tile_size*S.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
@@ -64,9 +60,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileA = A(k,k);
             double *tileS = S(m,k);
             double *tileB = A(m,k);
-#ifdef PALIAL_TRACE
-            cvector_push_back(ompt_task_names, "tsqrt");
-#endif
+            upstream_palial_set_task_name("tsqrt");
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out : tileS[0:S.tile_size*A.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
@@ -87,9 +81,7 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                 double *tileS = S(m,k);
                 double *tileB = A(m,n);
                 double *tileC = A(m,k);
-#ifdef PALIAL_TRACE
-                cvector_push_back(ompt_task_names, "tsmqr");
-#endif
+                upstream_palial_set_task_name("tsmqr");
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in : tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
                 {
                     double work[S.tile_size * S.tile_size];

@@ -1,47 +1,13 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <inttypes.h>
-#define _GNU_SOURCE
+#define LOG 1
 
-#include <omp.h>
-#include <omp-tools.h>
-#include "../src/cvector.h"
+#include "palial_trace.h"
+#include "log.h"
 
-#define MAX_THREADS     128
-#define MAX_MODES       20
-#define MAX_STRING_SIZE 8
-
-#include "ompt_callbacks.h"
-
-static ompt_get_thread_data_t ompt_get_thread_data;
-static ompt_get_unique_id_t   ompt_get_unique_id;
-static ompt_get_proc_id_t     ompt_get_proc_id;
-callback_counter_type *c_counter;
-int counter = 0;
-
-#include "thread_id.h"
-#include "thread_beginend.h"
-#include "parallel_beginend.h"
-
-typedef struct {
-   const void*        task_ptr;
-   const char*        name;
-   uint64_t           id;
-   int                n_dependences;
-   ompt_dependence_t* dependences;
-   char               access_mode[MAX_MODES][MAX_STRING_SIZE];
-   double             start_time;
-   double             end_time;
-   bool               scheduled; // if = 1, task is completed
-   int                n_task_dependences;
-   int                task_dependences[MAX_MODES];
-   int                cpu;
-   int                node;
-} palial_task_t;
-
-cvector_vector_type(palial_task_t*) ompt_tasks = NULL;
+const char *new_name;
+extern void trace_palial_set_task_name (const char *name)
+{
+    new_name = name;
+}
 
 // ompt_callback_task_create is used for callbacks that are dispatched when task regions or initial tasks are generated
 static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data,
@@ -63,16 +29,7 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
    palial_task_t* task = (palial_task_t*)malloc(sizeof(*task));
    new_task_data->ptr = task;
    task->id = new_task_data->value;
-   if (has_dependences != 0)
-   {
-      if (cvector_size(ompt_task_names) != 0)
-      {
-         task->name = ompt_task_names[counter];
-         //task->cpu  = ompt_cpu_locations[counter]; 
-         //task->node = ompt_node_locations[counter]; 
-      }
-      counter++;
-   }
+   task->name = new_name;
    task->task_ptr           = codeptr_ra;
    task->n_dependences      = 0;
    task->dependences        = NULL;
@@ -190,28 +147,23 @@ int ompt_initialize (ompt_function_lookup_t lookup,
    register_callback(ompt_callback_dependences);
    register_callback(ompt_callback_task_dependence);
 
-   //ompt_callback_t f_ompt_callback_task_dependence = &trace_ompt_callback_task_dependence;
-   //int info = ompt_set_callback(ompt_callback_task_dependence, f_ompt_callback_task_dependence);
-
    c_counter = calloc(MAX_THREADS, sizeof(callback_counter_type));
    data_from_tool->ptr = c_counter;
 
-   //printf("Init time: %f\n", omp_get_wtime() - *(double*)(data_from_tool->ptr));
-   //*(double*)(data_from_tool->ptr) = omp_get_wtime();
    return 1;
 }
 
 void ompt_finalize (ompt_data_t *data_from_tool)
 {
    sum_of_callbacks(data_from_tool->ptr);
-   //printf("Runtime: %f\n", omp_get_wtime() - *(double*)(data_from_tool->ptr));
    free(data_from_tool->ptr);
+#ifdef LOG
+   palial_log_trace(ompt_tasks);
+#endif
 }
 
 ompt_start_tool_result_t *ompt_start_tool (unsigned int omp_version, const char *runtime_version)
 {
-   static double time = 0;
-   time = omp_get_wtime();
    static ompt_start_tool_result_t ompt_start_tool_result = {&ompt_initialize, &ompt_finalize, {.value = 0}};
    return &ompt_start_tool_result;
 }
