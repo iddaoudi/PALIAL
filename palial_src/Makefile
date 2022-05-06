@@ -24,7 +24,7 @@ palial: main.c $(wildcard ../include/*.h ../src/*.h ../src/srcqr/*.h ../src/srcl
 	$(CC) $(CFLAGS) $(FLAGS_OPENMP) $< -o $@ $(OPENMP_LIBRARY) $(LAPACKE_LIB)
 
 cholesky: palial
-	LD_PRELOAD=/$(LLVM_OMP_LIB)/lib/libomp.so:$(PALIAL_TRACE_LIB) ./palial -a lu -m 256 -b 64
+	LD_PRELOAD=/$(LLVM_OMP_LIB)/lib/libomp.so:$(PALIAL_TRACE_LIB) ./palial -a cholesky -m 256 -b 64
 
 .PHONY: all pal palial clean
 

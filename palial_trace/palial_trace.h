@@ -7,7 +7,7 @@
 
 #include <omp.h>
 #include <omp-tools.h>
-#include "../src/cvector.h"
+#include "../include/cvector.h"
 
 #define MAX_THREADS     128
 #define MAX_MODES       50
@@ -24,13 +24,16 @@ callback_counter_type *c_counter;
 int counter = 0;
 
 extern void trace_palial_set_task_name (const char *name);
-extern void __trace_palial_set_task_name (const char *name)
-{
-    trace_palial_set_task_name(name);
-}
+extern void trace_palial_set_task_cpu (int cpu, char* name);
+
 extern void palial_set_task_name (const char *name)
 {
     trace_palial_set_task_name(name);
+}
+
+extern void palial_set_task_cpu (int cpu, char* name)
+{
+    trace_palial_set_task_cpu(cpu, name);
 }
 
 typedef struct {
@@ -42,7 +45,8 @@ typedef struct {
    char               access_mode[MAX_MODES][MAX_STRING_SIZE];
    double             start_time;
    double             end_time;
-   bool               scheduled; // if = 1, task is completed
+   bool               scheduled;
+   bool               finished;
    int                n_task_dependences;
    int                task_dependences[MAX_MODES];
    int                cpu;

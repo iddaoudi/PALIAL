@@ -10,7 +10,7 @@ void palial_log_trace (cvector_vector_type(palial_task_t*) ompt_tasks)
 {
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
     {
-        printf("Task ID          : %d\n", ompt_tasks[i]->id);
+        printf("Task ID          : %ld\n", ompt_tasks[i]->id);
         printf("Task name        : %s\n", ompt_tasks[i]->name);
         printf("Task ndeps       : %d\n", ompt_tasks[i]->n_dependences);
         printf("Task access mode : ");

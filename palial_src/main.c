@@ -7,7 +7,6 @@
  **/
 
 #define _GNU_SOURCE
-#define LOGTRACE 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,11 +29,13 @@ int MSIZE, BSIZE, NTH;
 //#define SPECIAL4x4 1
 //#define IDENTITY 1
 
+#include "../include/cvector.h"
 #include "../include/descriptor.h"
 #include "../include/tile_address.h"
 #include "../include/print.h"
 #include "../include/populate.h"
 
+cvector_vector_type(int) palial_cpus;
 #include "../src/cholesky.h"
 #include "../src/qr.h"
 #include "../src/lu.h"
@@ -103,6 +104,7 @@ int main (int argc, char* argv[])
       printf("Tile size does not divide the matrix size. Aborting...\n");
       exit(0);
    }
+   
    /* Structures memory allocation */
    MATRIX_desc *A = NULL;
    double *ptr = 0;
@@ -112,12 +114,14 @@ int main (int argc, char* argv[])
       printf("Problem allocating contiguous memory.\n");
       exit(EXIT_FAILURE);
    }
+
    /* Matrix creation */
    matrix_desc_create(&A, ptr, BSIZE, MSIZE*MSIZE, BSIZE*BSIZE, MSIZE);
    /* Creating Hermitian positive matrix */
    hermitian_positive_generator(*A);
 
    struct timeval time_start, time_finish;
+   
    if (!strcmp(algorithm, "cholesky"))
    {
 #pragma omp parallel
@@ -162,46 +166,14 @@ int main (int argc, char* argv[])
    //    printf("%s, %d, %d, %d, %f\n", algorithm, MSIZE, BSIZE, NTH, time);
    //    printf("########################################\n");
    //    printf("%d, %d, %d, %f\n", MSIZE, BSIZE, NTH, time);
-   //
-#ifdef LOGTRACE 
-//   for (int i = 0; i < cvector_size(ompt_tasks); i++)
-//       {
-//           printf("Task id                         : %" PRIu64 "\n", ompt_tasks[i]->id);
-//           printf("Task name                       : %s\n", ompt_tasks[i]->name);
-//           printf("Task number of data dependences : %d\n", ompt_tasks[i]->n_dependences);
-//           printf("Task access mode                : ");
-//           for (int j = 0; j < ompt_tasks[i]->n_dependences; j++)
-//           {
-//             printf("%s ", ompt_tasks[i]->access_mode[j]);
-//           }
-//           printf("\n");
-//           printf("Task is scheduled               : %d\n", ompt_tasks[i]->scheduled);
-//           printf("Task CPU                        : %d\n", ompt_tasks[i]->cpu);
-//           printf("Task node                       : %d\n", ompt_tasks[i]->node);
-//           printf("Task number of dependences      : %d\n", ompt_tasks[i]->n_task_dependences);
-//           printf("Task dependences                : ");
-//           for (int j = 0; j < ompt_tasks[i]->n_task_dependences; j++)
-//           {
-//             for (int k = 0; k < cvector_size(ompt_tasks); k++)
-//             {
-//               if (ompt_tasks[i]->task_dependences[j] == ompt_tasks[k]->id)
-//               {
-//                  printf("%s ", ompt_tasks[k]->name);
-//               }
-//             }
-//           }
-//           printf("\n");
-//           printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-//       }
-#endif
 
-//   printf("size of ompt_cpu_locations: %d\n", cvector_size(ompt_cpu_locations));    
-//   printf("size of ompt_task_names: %d\n", cvector_size(ompt_task_names));
-//   for (int i = 0; i < cvector_size(ompt_tasks); i++)
-//   {
-//       free(ompt_tasks[i]->dependences);
-//       free(ompt_tasks[i]);
-//   }
+   printf("palial cpu vec size: %d\n", cvector_size(palial_cpus));
+   for (int i = 0; i < cvector_size(palial_cpus); i++)
+   {
+       printf("captured cpu: %d\n", palial_cpus[i]);
+   }
+   
+   cvector_free(palial_cpus);
    free(A->matrix);
    matrix_desc_destroy(&A);
 }
