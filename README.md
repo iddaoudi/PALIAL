@@ -24,3 +24,8 @@ The algorithms parameters can be tweaked from ```palial_algs/Makefile```, for ex
 ```
 ./palial -a qr -m 12288 -b 1024
 ```
+
+### Todo
+* more debugging for the vector size problem
+* keep a single upstream function for both task names and CPU numbers and node numbers
+* test real time task termination (also use bigger tile sizes) before implementing energy consumption measurement
