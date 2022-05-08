@@ -10,10 +10,12 @@
 #include "../include/cvector.h"
 
 #define MAX_THREADS     128
-#define MAX_MODES       50
-#define MAX_STRING_SIZE 8
 
 #include "ompt_callbacks.h"
+
+#define MAX_STRING_SIZE 8
+#define MAX_TASKS       1000000 /* A million tasks is enough for now, FIXME tho with some juicy realloc */
+#define MAX_MODES       50
 
 static ompt_get_thread_data_t ompt_get_thread_data;
 static ompt_get_unique_id_t   ompt_get_unique_id;
@@ -23,22 +25,25 @@ static ompt_get_place_num_t   ompt_get_place_num;
 callback_counter_type *c_counter;
 int counter = 0;
 
+const char *new_name        = NULL;
+volatile int index_position = 0;
+
 extern void trace_palial_set_task_name (const char *name);
-extern void trace_palial_set_task_cpu (int cpu, char* name);
+extern void trace_palial_set_task_cpu (volatile int cpu, volatile char* name);
 
 extern void palial_set_task_name (const char *name)
 {
     trace_palial_set_task_name(name);
 }
 
-extern void palial_set_task_cpu (int cpu, char* name)
+extern void palial_set_task_cpu (volatile int cpu, volatile char* name)
 {
     trace_palial_set_task_cpu(cpu, name);
 }
 
 typedef struct {
    const void*        task_ptr;
-   const char*        name;
+   char*              name;
    uint64_t           id;
    int                n_dependences;
    ompt_dependence_t* dependences;

@@ -3,22 +3,16 @@
 #include "palial_trace.h"
 #include "log.h"
 
-#define MAX_TASKS 1000000 // a million tasks is enough!
-#define STRLEN 6
-
-const char *new_name = NULL;
-int index_position   = 0;
-
 extern void trace_palial_set_task_name (const char *name)
 {
     new_name = name;
 }
 
-extern void trace_palial_set_task_cpu (int cpu, char* name)
+extern void trace_palial_set_task_cpu (volatile int cpu, volatile char* name)
 {
     if (cvector_size(ompt_tasks) > index_position)
     {
-        int tmp = cpu;
+        volatile int tmp = cpu;
         ompt_tasks[index_position]->cpu = tmp;
         index_position++;
     }
@@ -44,7 +38,7 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
     palial_task_t* task = (palial_task_t*)malloc(sizeof(*task));
     new_task_data->ptr       = task;
     task->id                 = new_task_data->value;
-    task->name               = malloc(STRLEN);
+    task->name               = malloc(MAX_STRING_SIZE);
     strcpy(task->name, new_name);
     task->task_ptr           = codeptr_ra;
     task->n_dependences      = 0;
@@ -175,7 +169,7 @@ void ompt_finalize (ompt_data_t *data_from_tool)
     sum_of_callbacks(data_from_tool->ptr);
     if (cvector_size(ompt_tasks) != index_position)
     {
-        printf("Internal problem. Rerun the tests.\n");
+        printf("PALIAL internal problem. Exiting...\n");
         exit(EXIT_FAILURE);
     }
 #ifdef LOG
