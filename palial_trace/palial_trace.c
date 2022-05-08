@@ -1,7 +1,10 @@
-#define LOG 1
+//#define LOG 1
 
+#include <pthread.h>
 #include "palial_trace.h"
 #include "log.h"
+
+pthread_mutex_t mutex;
 
 extern void trace_palial_set_task_name (const char *name)
 {
@@ -10,12 +13,10 @@ extern void trace_palial_set_task_name (const char *name)
 
 extern void trace_palial_set_task_cpu (volatile int cpu, volatile char* name)
 {
-    if (cvector_size(ompt_tasks) > index_position)
-    {
-        volatile int tmp = cpu;
-        ompt_tasks[index_position]->cpu = tmp;
-        index_position++;
-    }
+    pthread_mutex_lock(&mutex);
+    ompt_tasks[index_position]->cpu = cpu;
+    index_position++;
+    pthread_mutex_unlock(&mutex);
 }
 
 // ompt_callback_task_create is used for callbacks that are dispatched when task regions or initial tasks are generated
@@ -169,7 +170,7 @@ void ompt_finalize (ompt_data_t *data_from_tool)
     sum_of_callbacks(data_from_tool->ptr);
     if (cvector_size(ompt_tasks) != index_position)
     {
-        printf("PALIAL internal problem. Exiting...\n");
+        printf("PALIAL tracing tool internal problem. Exiting...\n");
         exit(EXIT_FAILURE);
     }
 #ifdef LOG
@@ -181,6 +182,7 @@ void ompt_finalize (ompt_data_t *data_from_tool)
         free(ompt_tasks[i]);
     }
     free(data_from_tool->ptr);
+    pthread_mutex_destroy(&mutex);
 }
 
 ompt_start_tool_result_t *ompt_start_tool (unsigned int omp_version, const char *runtime_version)
