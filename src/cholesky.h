@@ -17,7 +17,7 @@ void cholesky(MATRIX_desc A)
    {
       double *tileA = A(k,k);
       upstream_palial_set_task_name("potrf");
-#pragma omp task shared(palial_cpus) depend (inout : tileA[0:A.tile_size*A.tile_size])
+#pragma omp task depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
           LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                'U', 
@@ -32,7 +32,7 @@ void cholesky(MATRIX_desc A)
          double *tileA = A(k,k);
          double *tileB = A(k,m);
          upstream_palial_set_task_name("trsm");
-#pragma omp task shared(palial_cpus) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             cblas_dtrsm(CblasColMajor, 
                   CblasLeft, 
@@ -56,7 +56,7 @@ void cholesky(MATRIX_desc A)
          double *tileA = A(k,m);
          double *tileB = A(m,m);
          upstream_palial_set_task_name("syrk");
-#pragma omp task shared(palial_cpus) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             cblas_dsyrk(CblasColMajor, 
                   CblasUpper, 
@@ -79,7 +79,7 @@ void cholesky(MATRIX_desc A)
             double *tileB = A(k,m);
             double *tileC = A(n,m);
             upstream_palial_set_task_name("gemm");
-#pragma omp task shared(palial_cpus) depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
+#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
             {
                 cblas_dgemm(CblasColMajor, 
                      CblasTrans, 

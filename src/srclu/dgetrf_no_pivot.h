@@ -22,7 +22,7 @@ int PALIAL_dgetrf_no_piv (double *tileA, int lda, int tileA_size, int internal_s
         {
             if (i < tileA_size)
             {
-                if (abs(alpha) > safe_minimum)
+                if (fabs(alpha) > safe_minimum)
                 {
                     alpha = 1.0/alpha;
                     cblas_dscal(tileA_size - i - 1,

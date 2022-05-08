@@ -12,11 +12,11 @@
 /* Definition of descriptor structure */
 typedef struct matrix_descriptor_t
 {
-    void*    matrix;
     int      tile_size;        //mb
     long int matrix_nelements;
     long int tile_nelements;
     int      matrix_size;
+    void*    matrix;
 } MATRIX_desc;
 
 /* Matrix descriptor initialization */

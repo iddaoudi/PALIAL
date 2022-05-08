@@ -35,7 +35,6 @@ int MSIZE, BSIZE, NTH;
 #include "../include/print.h"
 #include "../include/populate.h"
 
-cvector_vector_type(int) palial_cpus;
 #include "../src/cholesky.h"
 #include "../src/qr.h"
 #include "../src/lu.h"
@@ -167,13 +166,6 @@ int main (int argc, char* argv[])
    //    printf("########################################\n");
    //    printf("%d, %d, %d, %f\n", MSIZE, BSIZE, NTH, time);
 
-   printf("palial cpu vec size: %d\n", cvector_size(palial_cpus));
-   for (int i = 0; i < cvector_size(palial_cpus); i++)
-   {
-       printf("captured cpu: %d\n", palial_cpus[i]);
-   }
-   
-   cvector_free(palial_cpus);
    free(A->matrix);
    matrix_desc_destroy(&A);
 }
