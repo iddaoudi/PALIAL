@@ -11,28 +11,51 @@
 
 void cholesky(MATRIX_desc A)
 {
-   int k, m, n;
-   int cpu = 0;
+   int k = 0, m = 0, n = 0;
    for (k = 0; k < A.matrix_size/A.tile_size; k++)
    {
       double *tileA = A(k,k);
-      upstream_palial_set_task_name("potrf");
-#pragma omp task depend (inout : tileA[0:A.tile_size*A.tile_size])
+      
+      // char array holding the task name and a unique identifier
+      char name_with_id_char[128];
+      strncpy(name_with_id_char, "potrf", 128);
+      char k_to_str[8], m_to_str[8], n_to_str[8];
+      sprintf(k_to_str, "%d", k);
+      sprintf(m_to_str, "%d", m);
+      sprintf(n_to_str, "%d", n);
+      strcat(name_with_id_char, k_to_str);
+      strcat(name_with_id_char, m_to_str);
+      strcat(name_with_id_char, n_to_str);
+      
+      upstream_palial_set_task_name(name_with_id_char);
+
+#pragma omp task firstprivate(name_with_id_char) depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
           LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                'U', 
                A.tile_size,
                tileA, 
                A.tile_size);
-          cpu = sched_getcpu();
-          upstream_palial_set_task_cpu(cpu, "potrf");
+          int cpu = sched_getcpu();
+          upstream_palial_set_task_cpu(cpu, name_with_id_char);
       }
       for (m = k+1; m < A.matrix_size/A.tile_size; m++)
       {
          double *tileA = A(k,k);
          double *tileB = A(k,m);
-         upstream_palial_set_task_name("trsm");
-#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
+         
+         char name_with_id_char[32];
+         strncpy(name_with_id_char, "trsm", 32);
+         char k_to_str[8], m_to_str[8], n_to_str[8];
+         sprintf(k_to_str, "%d", k);
+         sprintf(m_to_str, "%d", m);
+         sprintf(n_to_str, "%d", n);
+         strcat(name_with_id_char, k_to_str);
+         strcat(name_with_id_char, m_to_str);
+         strcat(name_with_id_char, n_to_str);
+         
+         upstream_palial_set_task_name(name_with_id_char);
+#pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             cblas_dtrsm(CblasColMajor, 
                   CblasLeft, 
@@ -46,8 +69,8 @@ void cholesky(MATRIX_desc A)
                   A.tile_size, 
                   tileB, 
                   A.tile_size);
-            cpu = sched_getcpu();
-            upstream_palial_set_task_cpu(cpu, "trsm");
+            int cpu = sched_getcpu();
+            upstream_palial_set_task_cpu(cpu, name_with_id_char);
          }
       }
 
@@ -55,8 +78,19 @@ void cholesky(MATRIX_desc A)
       {
          double *tileA = A(k,m);
          double *tileB = A(m,m);
-         upstream_palial_set_task_name("syrk");
-#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
+         
+         char name_with_id_char[32];
+         strncpy(name_with_id_char, "syrk", 32);
+         char k_to_str[8], m_to_str[8], n_to_str[8];
+         sprintf(k_to_str, "%d", k);
+         sprintf(m_to_str, "%d", m);
+         sprintf(n_to_str, "%d", n);
+         strcat(name_with_id_char, k_to_str);
+         strcat(name_with_id_char, m_to_str);
+         strcat(name_with_id_char, n_to_str);
+         
+         upstream_palial_set_task_name(name_with_id_char);
+#pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             cblas_dsyrk(CblasColMajor, 
                   CblasUpper, 
@@ -69,8 +103,8 @@ void cholesky(MATRIX_desc A)
                   1.0, 
                   tileB, 
                   A.tile_size);
-            cpu = sched_getcpu();
-            upstream_palial_set_task_cpu(cpu, "syrk");
+            int cpu = sched_getcpu();
+            upstream_palial_set_task_cpu(cpu, name_with_id_char);
          }
 
          for (n = k+1; n < m; n++)
@@ -78,8 +112,19 @@ void cholesky(MATRIX_desc A)
             double *tileA = A(k,n);
             double *tileB = A(k,m);
             double *tileC = A(n,m);
-            upstream_palial_set_task_name("gemm");
-#pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
+            
+            char name_with_id_char[32];
+            strncpy(name_with_id_char, "gemm", 32);
+            char k_to_str[8], m_to_str[8], n_to_str[8];
+            sprintf(k_to_str, "%d", k);
+            sprintf(m_to_str, "%d", m);
+            sprintf(n_to_str, "%d", n);
+            strcat(name_with_id_char, k_to_str);
+            strcat(name_with_id_char, m_to_str);
+            strcat(name_with_id_char, n_to_str);
+            
+            upstream_palial_set_task_name(name_with_id_char);
+#pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
             {
                 cblas_dgemm(CblasColMajor, 
                      CblasTrans, 
@@ -95,8 +140,8 @@ void cholesky(MATRIX_desc A)
                      1.0, 
                      tileC, 
                      A.tile_size);
-                cpu = sched_getcpu();
-                upstream_palial_set_task_cpu(cpu, "gemm");
+                int cpu = sched_getcpu();
+                upstream_palial_set_task_cpu(cpu, name_with_id_char);
             }
          }
       }

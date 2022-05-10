@@ -1,4 +1,4 @@
-//#define LOG 1
+#define LOG 1
 
 #include <pthread.h>
 #include "palial_trace.h"
@@ -6,16 +6,26 @@
 
 pthread_mutex_t mutex;
 
+int internal_order_id = 0;
+
+// this upstream function is called everytime before task creation, so the new_name is always ready to be inserted in the task object
 extern void trace_palial_set_task_name (const char *name)
 {
     new_name = name;
 }
 
-extern void trace_palial_set_task_cpu (volatile int cpu, volatile char* name)
+// this upstream function is called everytime inside a RUNNING task, therefore the corresponding task object has already been created
+extern void trace_palial_set_task_cpu (int cpu, char* name)
 {
     pthread_mutex_lock(&mutex);
-    ompt_tasks[index_position]->cpu = cpu;
-    index_position++;
+    for (int i = 0; i < cvector_size(ompt_tasks); i++)
+    {
+        if (strcmp(ompt_tasks[i]->name, name) == 0)
+        {
+            ompt_tasks[i]->cpu      = cpu;
+            ompt_tasks[i]->finished = true;
+        }
+    }
     pthread_mutex_unlock(&mutex);
 }
 
@@ -168,11 +178,11 @@ int ompt_initialize (ompt_function_lookup_t lookup,
 void ompt_finalize (ompt_data_t *data_from_tool)
 {
     sum_of_callbacks(data_from_tool->ptr);
-    if (cvector_size(ompt_tasks) != index_position)
-    {
-        printf("PALIAL tracing tool internal problem. Exiting...\n");
-        exit(EXIT_FAILURE);
-    }
+    //if (cvector_size(ompt_tasks) != index_position)
+    //{
+    //    printf("PALIAL tracing tool internal problem. Exiting...\n");
+    //    exit(EXIT_FAILURE);
+    //}
 #ifdef LOG
     palial_log_trace(ompt_tasks);
 #endif

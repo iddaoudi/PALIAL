@@ -26,17 +26,16 @@ callback_counter_type *c_counter;
 int counter = 0;
 
 const char *new_name        = NULL;
-volatile int index_position = 0;
 
 extern void trace_palial_set_task_name (const char *name);
-extern void trace_palial_set_task_cpu (volatile int cpu, volatile char* name);
+extern void trace_palial_set_task_cpu (int cpu, char* name);
 
 extern void palial_set_task_name (const char *name)
 {
     trace_palial_set_task_name(name);
 }
 
-extern void palial_set_task_cpu (volatile int cpu, volatile char* name)
+extern void palial_set_task_cpu (int cpu, char* name)
 {
     trace_palial_set_task_cpu(cpu, name);
 }
