@@ -2,7 +2,7 @@
 PArallel LInear ALgebra routines
 
 ## Principle
-* 3 dense OpenMP task-based linear algebra algorithms are implemented (```palial_algs```)
+* 3 dense OpenMP task-based linear algebra algorithms are implemented (```palial_src```): Cholesky, QR and LU decompositions
 * Tracing these algorithms is done with the ```palial_trace``` library using OMPT callbacks
 
 ## Compilation
