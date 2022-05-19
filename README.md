@@ -16,11 +16,11 @@ make
 
 ### ALGS
 ```
-cd palial_algs/
+cd palial_src/
 make
 ```
 
-The algorithms parameters can be tweaked from ```palial_algs/Makefile```, for example:
+The algorithms parameters can be tweaked from ```palial_src/Makefile```, for example:
 ```
 ./palial -a qr -m 12288 -b 1024
 ```
