@@ -1,12 +1,15 @@
+/**
+ * File              : palial_trace.c
+ * Author            : Idriss Daoudi <idaoudi@anl.gov>
+ * Date              : 25.04.2022
+ * Last Modified Date: 19.05.2022
+ * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
+ */
+
 #define LOG 1
 
-#include <pthread.h>
 #include "palial_trace.h"
 #include "log.h"
-
-pthread_mutex_t mutex;
-
-int internal_order_id = 0;
 
 // this upstream function is called everytime before task creation, so the new_name is always ready to be inserted in the task object
 extern void trace_palial_set_task_name (const char *name)
@@ -15,7 +18,7 @@ extern void trace_palial_set_task_name (const char *name)
 }
 
 // this upstream function is called everytime inside a RUNNING task, therefore the corresponding task object has already been created
-extern void trace_palial_set_task_cpu (int cpu, char* name)
+extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
 {
     pthread_mutex_lock(&mutex);
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
@@ -23,6 +26,7 @@ extern void trace_palial_set_task_cpu (int cpu, char* name)
         if (strcmp(ompt_tasks[i]->name, name) == 0)
         {
             ompt_tasks[i]->cpu      = cpu;
+            ompt_tasks[i]->node     = node;
             ompt_tasks[i]->finished = true;
         }
     }
@@ -49,7 +53,7 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
     palial_task_t* task = (palial_task_t*)malloc(sizeof(*task));
     new_task_data->ptr       = task;
     task->id                 = new_task_data->value;
-    task->name               = malloc(MAX_STRING_SIZE);
+    task->name               = malloc(MAX_STRING_SIZE * sizeof(char));
     strcpy(task->name, new_name);
     task->task_ptr           = codeptr_ra;
     task->n_dependences      = 0;
@@ -61,7 +65,9 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
     task->n_task_dependences = 0;
     task->cpu                = 0;
     task->node               = 0;
+    pthread_mutex_lock(&mutex);
     cvector_push_back(ompt_tasks, task);
+    pthread_mutex_unlock(&mutex);
 }
 
 // ompt_callback_task_schedule is used for callbacks that are dispatched when task scheduling decisions are made
@@ -77,7 +83,9 @@ static void trace_ompt_callback_task_schedule (ompt_data_t *prior_task_data,
         if (ompt_tasks[i]->id == prior_task_data->value)
         {
             task = ompt_tasks[i];
+            pthread_mutex_lock(&mutex);
             task->scheduled = true;
+            pthread_mutex_unlock(&mutex);
             break;
         }
     }
@@ -100,6 +108,7 @@ static void trace_ompt_callback_dependences (ompt_data_t *task_data,
             break;
         }
     }
+    pthread_mutex_lock(&mutex);
     task->dependences = (ompt_dependence_t*)malloc(ndeps * sizeof(ompt_dependence_t));
     task->n_dependences = ndeps;
     memcpy(task->dependences, deps, ndeps * sizeof(ompt_dependence_t));
@@ -118,6 +127,7 @@ static void trace_ompt_callback_dependences (ompt_data_t *task_data,
             exit(EXIT_FAILURE);
         }
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
@@ -125,6 +135,8 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
 {
     unsigned int thread_id = ompt_get_thread_data()->value;
     c_counter[thread_id]._cc.task_dependence += 1;
+    
+    pthread_mutex_lock(&mutex);
     palial_task_t *src_task  = NULL;
     palial_task_t *sink_task = NULL;
     // Find the task
@@ -142,7 +154,6 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
         {
             sink_task = ompt_tasks[i];
             break;
-            break;
         }
     }
     if (sink_task != NULL && src_task != NULL)
@@ -151,6 +162,7 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
         sink_task->task_dependences[count] = src_task->id;
         sink_task->n_task_dependences += 1;
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 int ompt_initialize (ompt_function_lookup_t lookup,
@@ -178,17 +190,13 @@ int ompt_initialize (ompt_function_lookup_t lookup,
 void ompt_finalize (ompt_data_t *data_from_tool)
 {
     sum_of_callbacks(data_from_tool->ptr);
-    //if (cvector_size(ompt_tasks) != index_position)
-    //{
-    //    printf("PALIAL tracing tool internal problem. Exiting...\n");
-    //    exit(EXIT_FAILURE);
-    //}
 #ifdef LOG
     palial_log_trace(ompt_tasks);
 #endif
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
     {
         free(ompt_tasks[i]->dependences);
+        free(ompt_tasks[i]->name);
         free(ompt_tasks[i]);
     }
     free(data_from_tool->ptr);

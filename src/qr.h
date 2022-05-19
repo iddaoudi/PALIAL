@@ -2,7 +2,7 @@
  * File              : qr.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 01.02.2022
- * Last Modified Date: 03.02.2022
+ * Last Modified Date: 18.05.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -19,7 +19,19 @@ void qr(MATRIX_desc A, MATRIX_desc S)
     {
         double *tileA = A(k,k);
         double *tileS = S(k,k);
-        upstream_palial_set_task_name("geqrt");
+
+        char name_with_id_char[32];
+        strncpy(name_with_id_char, "geqrt", 32);
+        char k_to_str[8], m_to_str[8], n_to_str[8];
+        sprintf(k_to_str, "%d", k);
+        sprintf(m_to_str, "%d", m);
+        sprintf(n_to_str, "%d", n);
+        strcat(name_with_id_char, k_to_str);
+        strcat(name_with_id_char, m_to_str);
+        strcat(name_with_id_char, n_to_str);
+
+        upstream_palial_set_task_name(name_with_id_char);
+
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size]) depend(out : tileS[0:A.tile_size*S.tile_size])
         {
             double tho[S.tile_size];
@@ -32,13 +44,29 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                     S.tile_size,
                     &tho[0],
                     &work[0]);
+            unsigned int cpu;
+            unsigned int node;
+            getcpu(&cpu, &node);
+            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
         }
         for (n = k+1; n < A.matrix_size/A.tile_size; n++)
         {
             double *tileA = A(k,k);
             double *tileS = S(k,k);
             double *tileB = A(k,n);
-            upstream_palial_set_task_name("ormqr");
+
+            char name_with_id_char[32];
+            strncpy(name_with_id_char, "ormqr", 32);
+            char k_to_str[8], m_to_str[8], n_to_str[8];
+            sprintf(k_to_str, "%d", k);
+            sprintf(m_to_str, "%d", m);
+            sprintf(n_to_str, "%d", n);
+            strcat(name_with_id_char, k_to_str);
+            strcat(name_with_id_char, m_to_str);
+            strcat(name_with_id_char, n_to_str);
+
+            upstream_palial_set_task_name(name_with_id_char);
+
 #pragma omp task depend(in : tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout : tileB[0:S.tile_size*S.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
@@ -53,6 +81,10 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         A.tile_size,
                         &work[0],
                         S.tile_size);
+                unsigned int cpu;
+                unsigned int node;
+                getcpu(&cpu, &node);
+                upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             }
         }
         for (m = k+1; m < A.matrix_size/A.tile_size; m++)
@@ -60,7 +92,19 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             double *tileA = A(k,k);
             double *tileS = S(m,k);
             double *tileB = A(m,k);
-            upstream_palial_set_task_name("tsqrt");
+
+            char name_with_id_char[32];
+            strncpy(name_with_id_char, "tsqrt", 32);
+            char k_to_str[8], m_to_str[8], n_to_str[8];
+            sprintf(k_to_str, "%d", k);
+            sprintf(m_to_str, "%d", m);
+            sprintf(n_to_str, "%d", n);
+            strcat(name_with_id_char, k_to_str);
+            strcat(name_with_id_char, m_to_str);
+            strcat(name_with_id_char, n_to_str);
+
+            upstream_palial_set_task_name(name_with_id_char);
+
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out : tileS[0:S.tile_size*A.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
@@ -74,6 +118,10 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         S.tile_size,
                         &tho[0],
                         &work[0]);
+                unsigned int cpu;
+                unsigned int node;
+                getcpu(&cpu, &node);   
+                upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             }
             for (n = k+1; n < A.matrix_size/A.tile_size; n++)
             {
@@ -81,7 +129,19 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                 double *tileS = S(m,k);
                 double *tileB = A(m,n);
                 double *tileC = A(m,k);
-                upstream_palial_set_task_name("tsmqr");
+
+                char name_with_id_char[32];
+                strncpy(name_with_id_char, "tsmqr", 32);
+                char k_to_str[8], m_to_str[8], n_to_str[8];
+                sprintf(k_to_str, "%d", k);
+                sprintf(m_to_str, "%d", m);
+                sprintf(n_to_str, "%d", n);
+                strcat(name_with_id_char, k_to_str);
+                strcat(name_with_id_char, m_to_str);
+                strcat(name_with_id_char, n_to_str);
+
+                upstream_palial_set_task_name(name_with_id_char);
+
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in : tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
                 {
                     double work[S.tile_size * S.tile_size];
@@ -101,6 +161,10 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                             S.tile_size,
                             &work[0],
                             A.tile_size);
+                    unsigned int cpu;
+                    unsigned int node;
+                    getcpu(&cpu, &node);       
+                    upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
                 }
             }
         }

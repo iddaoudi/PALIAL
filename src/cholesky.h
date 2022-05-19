@@ -2,7 +2,7 @@
  * File              : cholesky.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 31.01.2022
- * Last Modified Date: 16.04.2022
+ * Last Modified Date: 16.05.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -17,8 +17,8 @@ void cholesky(MATRIX_desc A)
       double *tileA = A(k,k);
       
       // char array holding the task name and a unique identifier
-      char name_with_id_char[128];
-      strncpy(name_with_id_char, "potrf", 128);
+      char name_with_id_char[32];
+      strncpy(name_with_id_char, "potrf", 32);
       char k_to_str[8], m_to_str[8], n_to_str[8];
       sprintf(k_to_str, "%d", k);
       sprintf(m_to_str, "%d", m);
@@ -36,8 +36,10 @@ void cholesky(MATRIX_desc A)
                A.tile_size,
                tileA, 
                A.tile_size);
-          int cpu = sched_getcpu();
-          upstream_palial_set_task_cpu(cpu, name_with_id_char);
+          unsigned int cpu;
+          unsigned int node;
+          getcpu(&cpu, &node);
+          upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
       }
       for (m = k+1; m < A.matrix_size/A.tile_size; m++)
       {
@@ -69,8 +71,10 @@ void cholesky(MATRIX_desc A)
                   A.tile_size, 
                   tileB, 
                   A.tile_size);
-            int cpu = sched_getcpu();
-            upstream_palial_set_task_cpu(cpu, name_with_id_char);
+            unsigned int cpu;
+            unsigned int node;
+            getcpu(&cpu, &node);
+            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
          }
       }
 
@@ -103,8 +107,10 @@ void cholesky(MATRIX_desc A)
                   1.0, 
                   tileB, 
                   A.tile_size);
-            int cpu = sched_getcpu();
-            upstream_palial_set_task_cpu(cpu, name_with_id_char);
+            unsigned int cpu;
+            unsigned int node;
+            getcpu(&cpu, &node);
+            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
          }
 
          for (n = k+1; n < m; n++)
@@ -140,8 +146,10 @@ void cholesky(MATRIX_desc A)
                      1.0, 
                      tileC, 
                      A.tile_size);
-                int cpu = sched_getcpu();
-                upstream_palial_set_task_cpu(cpu, name_with_id_char);
+                unsigned int cpu;
+                unsigned int node;
+                getcpu(&cpu, &node);
+                upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             }
          }
       }

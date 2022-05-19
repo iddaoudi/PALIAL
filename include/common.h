@@ -7,14 +7,14 @@
  */
 
 void __attribute__((weak)) palial_set_task_name (const char *name);
-void __attribute__((weak)) palial_set_task_cpu (int cpu, char* name);
+void __attribute__((weak)) palial_set_task_cpu_node (int cpu, int node, char* name);
 
 extern inline void upstream_palial_set_task_name (const char *name)
 {
     return palial_set_task_name(name);
 }
 
-extern inline void upstream_palial_set_task_cpu (int cpu, char* name)
+extern inline void upstream_palial_set_task_cpu_node (int cpu, int node, char* name)
 {
-    palial_set_task_cpu(cpu, name);
+    palial_set_task_cpu_node(cpu, node, name);
 }
