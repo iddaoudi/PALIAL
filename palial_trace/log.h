@@ -39,3 +39,18 @@ void palial_log_trace (cvector_vector_type(palial_task_t*) ompt_tasks)
         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     }
 }
+
+void palial_task_times_trace (cvector_vector_type(palial_task_t*) ompt_tasks)
+{
+    for (int i = 0; i < cvector_size(ompt_tasks); i++)
+    {
+        double tmp = ompt_tasks[i]->end_time - ompt_tasks[i]->start_time; //in us
+        printf("%s, %f\n", ompt_tasks[i]->name, tmp/1000); // in ms
+    }
+}
+
+
+
+
+
+
