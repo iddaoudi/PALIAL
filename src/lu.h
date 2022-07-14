@@ -2,7 +2,7 @@
  * File              : lu.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 03.02.2022
- * Last Modified Date: 19.05.2022
+ * Last Modified Date: 14.07.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -29,13 +29,18 @@ void lu (MATRIX_desc A)
 
 #pragma omp task depend(inout : tileA[0])
         {
+            struct timeval start, end;
+            
+            gettimeofday(&start, NULL);
             PALIAL_dgetrf(A.tile_size,
                     tileA,
                     A.tile_size);
-            unsigned int cpu;
-            unsigned int node;
+            gettimeofday(&end, NULL);
+            
+            unsigned int cpu, node;
             getcpu(&cpu, &node);
             upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+            upstream_palial_get_task_time(start, end, name_with_id_char);
         }
         for (m = k+1; m < A.matrix_size/A.tile_size; m++)
         {
@@ -56,6 +61,9 @@ void lu (MATRIX_desc A)
 
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[A.tile_size*A.tile_size])
             {
+                struct timeval start, end;
+                
+                gettimeofday(&start, NULL);
                 cblas_dtrsm(CblasColMajor,
                         CblasRight,
                         CblasUpper,
@@ -68,10 +76,12 @@ void lu (MATRIX_desc A)
                         A.tile_size,
                         tileB,
                         A.tile_size);
-                unsigned int cpu;
-                unsigned int node;
+                gettimeofday(&end, NULL);
+                
+                unsigned int cpu, node;
                 getcpu(&cpu, &node);
                 upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                upstream_palial_get_task_time(start, end, name_with_id_char);
             }
         }
         for (n = k + 1; n < A.matrix_size/A.tile_size; n++)
@@ -93,6 +103,9 @@ void lu (MATRIX_desc A)
 
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[A.tile_size*A.tile_size])
             {
+                struct timeval start, end;
+                
+                gettimeofday(&start, NULL);
                 cblas_dtrsm(CblasColMajor,
                         CblasLeft,
                         CblasLower,
@@ -105,10 +118,12 @@ void lu (MATRIX_desc A)
                         A.tile_size,
                         tileB,
                         A.tile_size);
-                unsigned int cpu;
-                unsigned int node;
+                gettimeofday(&end, NULL);
+                
+                unsigned int cpu, node;
                 getcpu(&cpu, &node);   
                 upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                upstream_palial_get_task_time(start, end, name_with_id_char);
             }
             for (m = k + 1; m < A.matrix_size/A.tile_size; m++)
             {
@@ -130,6 +145,9 @@ void lu (MATRIX_desc A)
 
 #pragma omp task depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
                 {
+                    struct timeval start, end;
+                    
+                    gettimeofday(&start, NULL);
                     cblas_dgemm(CblasColMajor,
                             CblasNoTrans,
                             CblasNoTrans,
@@ -144,10 +162,12 @@ void lu (MATRIX_desc A)
                             1.0,
                             tileC,
                             A.tile_size);
-                    unsigned int cpu;
-                    unsigned int node;
+                    gettimeofday(&end, NULL);
+                    
+                    unsigned int cpu, node;
                     getcpu(&cpu, &node);
                     upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                    upstream_palial_get_task_time(start, end, name_with_id_char);
                 }
             }
         }

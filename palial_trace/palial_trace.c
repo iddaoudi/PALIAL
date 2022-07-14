@@ -2,7 +2,7 @@
  * File              : palial_trace.c
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 25.04.2022
- * Last Modified Date: 19.05.2022
+ * Last Modified Date: 14.07.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -31,6 +31,20 @@ extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
         }
     }
     pthread_mutex_unlock(&mutex);
+}
+
+extern void trace_palial_get_task_time (struct timeval start, struct timeval end, char* name)
+{
+    pthread_mutex_lock(&mutex); 
+    for (int i = 0; i < cvector_size(ompt_tasks); i++)
+    {
+        if (strcmp(ompt_tasks[i]->name, name) == 0)
+        {
+            ompt_tasks[i]->start_time = (start.tv_sec)*1000000 + start.tv_usec; //convert to us
+            ompt_tasks[i]->end_time   = (end.tv_sec)*1000000 + end.tv_usec;
+        }
+    }
+    pthread_mutex_unlock(&mutex); 
 }
 
 // ompt_callback_task_create is used for callbacks that are dispatched when task regions or initial tasks are generated

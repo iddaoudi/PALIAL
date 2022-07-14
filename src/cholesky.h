@@ -2,7 +2,7 @@
  * File              : cholesky.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 31.01.2022
- * Last Modified Date: 16.05.2022
+ * Last Modified Date: 14.07.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -31,15 +31,20 @@ void cholesky(MATRIX_desc A)
 
 #pragma omp task firstprivate(name_with_id_char) depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
+          struct timeval start, end;
+          
+          gettimeofday(&start, NULL);
           LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
                'U', 
                A.tile_size,
                tileA, 
                A.tile_size);
-          unsigned int cpu;
-          unsigned int node;
+          gettimeofday(&end, NULL);
+          
+          unsigned int cpu, node;
           getcpu(&cpu, &node);
           upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+          upstream_palial_get_task_time(start, end, name_with_id_char);
       }
       for (m = k+1; m < A.matrix_size/A.tile_size; m++)
       {
@@ -59,6 +64,9 @@ void cholesky(MATRIX_desc A)
          upstream_palial_set_task_name(name_with_id_char);
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
+            struct timeval start, end;
+            
+            gettimeofday(&start, NULL);
             cblas_dtrsm(CblasColMajor, 
                   CblasLeft, 
                   CblasUpper, 
@@ -71,10 +79,12 @@ void cholesky(MATRIX_desc A)
                   A.tile_size, 
                   tileB, 
                   A.tile_size);
-            unsigned int cpu;
-            unsigned int node;
+            gettimeofday(&end, NULL);
+            
+            unsigned int cpu, node;
             getcpu(&cpu, &node);
             upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+            upstream_palial_get_task_time(start, end, name_with_id_char);
          }
       }
 
@@ -96,6 +106,9 @@ void cholesky(MATRIX_desc A)
          upstream_palial_set_task_name(name_with_id_char);
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
+            struct timeval start, end;
+            
+            gettimeofday(&start, NULL);
             cblas_dsyrk(CblasColMajor, 
                   CblasUpper, 
                   CblasTrans, 
@@ -107,10 +120,12 @@ void cholesky(MATRIX_desc A)
                   1.0, 
                   tileB, 
                   A.tile_size);
-            unsigned int cpu;
-            unsigned int node;
+            gettimeofday(&end, NULL);
+            
+            unsigned int cpu, node;
             getcpu(&cpu, &node);
             upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+            upstream_palial_get_task_time(start, end, name_with_id_char);
          }
 
          for (n = k+1; n < m; n++)
@@ -131,7 +146,10 @@ void cholesky(MATRIX_desc A)
             
             upstream_palial_set_task_name(name_with_id_char);
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
-            {
+            {   
+                struct timeval start, end;
+                
+                gettimeofday(&start, NULL);
                 cblas_dgemm(CblasColMajor, 
                      CblasTrans, 
                      CblasNoTrans, 
@@ -146,10 +164,12 @@ void cholesky(MATRIX_desc A)
                      1.0, 
                      tileC, 
                      A.tile_size);
-                unsigned int cpu;
-                unsigned int node;
+                gettimeofday(&end, NULL);
+                
+                unsigned int cpu, node;
                 getcpu(&cpu, &node);
                 upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                upstream_palial_get_task_time(start, end, name_with_id_char);
             }
          }
       }

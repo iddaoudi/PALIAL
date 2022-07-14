@@ -2,7 +2,7 @@
  * File              : qr.h
  * Author            : Idriss Daoudi <idaoudi@anl.gov>
  * Date              : 01.02.2022
- * Last Modified Date: 18.05.2022
+ * Last Modified Date: 14.07.2022
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
@@ -36,6 +36,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
         {
             double tho[S.tile_size];
             double work[S.tile_size * S.tile_size];
+            struct timeval start, end;
+            
+            gettimeofday(&start, NULL);
             PALIAL_dgeqrt(A.tile_size,
                     S.tile_size,
                     tileA,
@@ -44,10 +47,12 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                     S.tile_size,
                     &tho[0],
                     &work[0]);
-            unsigned int cpu;
-            unsigned int node;
+            gettimeofday(&end, NULL);
+            
+            unsigned int cpu, node;
             getcpu(&cpu, &node);
             upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+            upstream_palial_get_task_time(start, end, name_with_id_char);
         }
         for (n = k+1; n < A.matrix_size/A.tile_size; n++)
         {
@@ -70,6 +75,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
 #pragma omp task depend(in : tileA[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size]) depend(inout : tileB[0:S.tile_size*S.tile_size])
             {
                 double work[S.tile_size * S.tile_size];
+                struct timeval start, end;
+                
+                gettimeofday(&start, NULL);
                 PALIAL_dormqr(PALIAL_left,
                         PALIAL_transpose,
                         A.tile_size,
@@ -81,10 +89,12 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         A.tile_size,
                         &work[0],
                         S.tile_size);
-                unsigned int cpu;
-                unsigned int node;
+                gettimeofday(&end, NULL);
+                
+                unsigned int cpu, node;
                 getcpu(&cpu, &node);
                 upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                upstream_palial_get_task_time(start, end, name_with_id_char);
             }
         }
         for (m = k+1; m < A.matrix_size/A.tile_size; m++)
@@ -106,9 +116,12 @@ void qr(MATRIX_desc A, MATRIX_desc S)
             upstream_palial_set_task_name(name_with_id_char);
 
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(out : tileS[0:S.tile_size*A.tile_size])
-            {
+            {   
                 double work[S.tile_size * S.tile_size];
                 double tho[S.tile_size];
+                struct timeval start, end;
+                
+                gettimeofday(&start, NULL);
                 PALIAL_dtsqrt(A.tile_size,
                         tileA,
                         A.tile_size,
@@ -118,10 +131,12 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                         S.tile_size,
                         &tho[0],
                         &work[0]);
-                unsigned int cpu;
-                unsigned int node;
+                gettimeofday(&end, NULL);
+                
+                unsigned int cpu, node;
                 getcpu(&cpu, &node);   
                 upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                upstream_palial_get_task_time(start, end, name_with_id_char);
             }
             for (n = k+1; n < A.matrix_size/A.tile_size; n++)
             {
@@ -145,6 +160,9 @@ void qr(MATRIX_desc A, MATRIX_desc S)
 #pragma omp task depend(inout : tileA[0:S.tile_size*S.tile_size], tileB[0:S.tile_size*S.tile_size]) depend(in : tileC[0:S.tile_size*S.tile_size], tileS[0:A.tile_size*S.tile_size])
                 {
                     double work[S.tile_size * S.tile_size];
+                    struct timeval start, end;
+                    
+                    gettimeofday(&start, NULL);
                     PALIAL_dtsmqr(PALIAL_left,
                             PALIAL_transpose,
                             A.tile_size,
@@ -161,10 +179,12 @@ void qr(MATRIX_desc A, MATRIX_desc S)
                             S.tile_size,
                             &work[0],
                             A.tile_size);
-                    unsigned int cpu;
-                    unsigned int node;
+                    gettimeofday(&end, NULL);
+                    
+                    unsigned int cpu, node;
                     getcpu(&cpu, &node);       
                     upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
+                    upstream_palial_get_task_time(start, end, name_with_id_char);
                 }
             }
         }

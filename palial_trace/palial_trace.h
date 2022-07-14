@@ -1,3 +1,11 @@
+/**
+ * File              : palial_trace.c
+ * Author            : Idriss Daoudi <idaoudi@anl.gov>
+ * Date              : 25.04.2022
+ * Last Modified Date: 14.07.2022
+ * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
+ */
+
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,6 +39,7 @@ const char *new_name        = NULL;
 
 extern void trace_palial_set_task_name (const char *name);
 extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name);
+extern void trace_palial_get_task_time (struct timeval start, struct timeval end, char* name);
 
 extern void palial_set_task_name (const char *name)
 {
@@ -42,6 +51,11 @@ extern void palial_set_task_cpu_node (int cpu, int node, char* name)
     trace_palial_set_task_cpu_node(cpu, node, name);
 }
 
+extern void palial_get_task_time (struct timeval start, struct timeval end, char* name)
+{
+    trace_palial_get_task_time(start, end, name);
+}
+
 typedef struct {
    const void*        task_ptr;
    char*              name;
@@ -49,7 +63,7 @@ typedef struct {
    int                n_dependences;
    ompt_dependence_t* dependences;
    char               access_mode[MAX_MODES][MAX_STRING_SIZE];
-   double             start_time;
+   double             start_time;  //in us
    double             end_time;
    bool               scheduled;
    bool               finished;
