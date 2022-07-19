@@ -12,7 +12,7 @@ void __attribute__((weak)) palial_get_task_time (struct timeval start, struct ti
 
 extern inline void upstream_palial_set_task_name (const char *name)
 {
-    return palial_set_task_name(name);
+    palial_set_task_name(name);
 }
 
 extern inline void upstream_palial_set_task_cpu_node (int cpu, int node, char* name)

@@ -32,6 +32,9 @@ void cholesky(MATRIX_desc A)
 #pragma omp task firstprivate(name_with_id_char) depend (inout : tileA[0:A.tile_size*A.tile_size])
       {
           struct timeval start, end;
+          unsigned int cpu, node;
+          getcpu(&cpu, &node);
+          upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
           
           gettimeofday(&start, NULL);
           LAPACKE_dpotrf(LAPACK_COL_MAJOR, 
@@ -41,9 +44,6 @@ void cholesky(MATRIX_desc A)
                A.tile_size);
           gettimeofday(&end, NULL);
           
-          unsigned int cpu, node;
-          getcpu(&cpu, &node);
-          upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
           upstream_palial_get_task_time(start, end, name_with_id_char);
       }
       for (m = k+1; m < A.matrix_size/A.tile_size; m++)
@@ -65,6 +65,9 @@ void cholesky(MATRIX_desc A)
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             struct timeval start, end;
+            unsigned int cpu, node;
+            getcpu(&cpu, &node);
+            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             
             gettimeofday(&start, NULL);
             cblas_dtrsm(CblasColMajor, 
@@ -81,9 +84,6 @@ void cholesky(MATRIX_desc A)
                   A.tile_size);
             gettimeofday(&end, NULL);
             
-            unsigned int cpu, node;
-            getcpu(&cpu, &node);
-            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             upstream_palial_get_task_time(start, end, name_with_id_char);
          }
       }
@@ -107,6 +107,9 @@ void cholesky(MATRIX_desc A)
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size]) depend(inout : tileB[0:A.tile_size*A.tile_size])
          {
             struct timeval start, end;
+            unsigned int cpu, node;
+            getcpu(&cpu, &node);
+            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             
             gettimeofday(&start, NULL);
             cblas_dsyrk(CblasColMajor, 
@@ -122,9 +125,6 @@ void cholesky(MATRIX_desc A)
                   A.tile_size);
             gettimeofday(&end, NULL);
             
-            unsigned int cpu, node;
-            getcpu(&cpu, &node);
-            upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
             upstream_palial_get_task_time(start, end, name_with_id_char);
          }
 
@@ -148,6 +148,9 @@ void cholesky(MATRIX_desc A)
 #pragma omp task firstprivate(name_with_id_char) depend(in : tileA[0:A.tile_size*A.tile_size], tileB[0:A.tile_size*A.tile_size]) depend(inout : tileC[0:A.tile_size*A.tile_size])
             {   
                 struct timeval start, end;
+                unsigned int cpu, node;
+                getcpu(&cpu, &node);
+                upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
                 
                 gettimeofday(&start, NULL);
                 cblas_dgemm(CblasColMajor, 
@@ -166,9 +169,6 @@ void cholesky(MATRIX_desc A)
                      A.tile_size);
                 gettimeofday(&end, NULL);
                 
-                unsigned int cpu, node;
-                getcpu(&cpu, &node);
-                upstream_palial_set_task_cpu_node(cpu, node, name_with_id_char);
                 upstream_palial_get_task_time(start, end, name_with_id_char);
             }
          }
