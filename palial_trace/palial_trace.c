@@ -6,10 +6,16 @@
  * Last Modified By  : Idriss Daoudi <idaoudi@anl.gov>
  */
 
+#include <ctype.h>
+
 #define LOG 1
+#define STR_SIZE 9
 
 #include "palial_trace.h"
 #include "log.h"
+
+void *context;
+void *request;
 
 // this upstream function is called everytime before task creation, so the new_name is always ready to be inserted in the task object
 extern void trace_palial_set_task_name (const char *name)
@@ -20,6 +26,24 @@ extern void trace_palial_set_task_name (const char *name)
 // this upstream function is called everytime inside a RUNNING task, therefore the corresponding task object has already been created
 extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
 {
+    // received name of task plus unique identifier
+    int char_counter = 0;
+    char str_name[6];
+    for (int i = 0; i < 5; i++)
+    {
+        if (isalpha(name[i]))
+            char_counter++;
+        else
+            break;
+    }
+    strncpy(str_name, name, char_counter);
+    str_name[char_counter + 1] = '\0';
+
+    char task_and_cpu[STR_SIZE]; // maximum of 5 letters + maximum of 2 digits + NULL terminator //FIXME
+    snprintf(task_and_cpu, STR_SIZE, "%s %d", str_name, cpu);
+    
+    PALIAL_zmq_send_signal(request, task_and_cpu);
+    
     pthread_mutex_lock(&mutex);
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
     {
@@ -27,7 +51,6 @@ extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
         {
             ompt_tasks[i]->cpu      = cpu;
             ompt_tasks[i]->node     = node;
-            ompt_tasks[i]->finished = true;
         }
     }
     pthread_mutex_unlock(&mutex);
@@ -75,7 +98,6 @@ static void trace_ompt_callback_task_create (ompt_data_t *encountering_task_data
     task->start_time         = 0;
     task->end_time           = 0;
     task->scheduled          = false;
-    task->finished           = false;
     task->n_task_dependences = 0;
     task->cpu                = 0;
     task->node               = 0;
@@ -179,10 +201,43 @@ static void trace_ompt_callback_task_dependence (ompt_data_t *src_task_data,
     pthread_mutex_unlock(&mutex);
 }
 
+void PALIAL_zmq_connect_client (void *request)
+{
+   // void *context = zmq_ctx_new();
+    //void *request = zmq_socket(context, ZMQ_REQ);
+    
+	int num = 0;
+    zmq_setsockopt(request, ZMQ_LINGER, &num, sizeof(int));
+    num = -1;
+    zmq_setsockopt(request, ZMQ_SNDHWM, &num, sizeof(int));
+    zmq_setsockopt(request, ZMQ_RCVHWM, &num, sizeof(int));
+
+    zmq_connect(request, "tcp://localhost:5555");
+    //sleep(1);
+    //zmq_close(request);
+    //zmq_ctx_destroy(context);
+}
+
+void PALIAL_zmq_send_signal (void *request, char *task_and_cpu)
+{
+    int ret = zmq_send(request, task_and_cpu, STR_SIZE, 0);
+    //printf("valeur du ret client: %d\n", ret);
+}
+
+void PALIAL_zmq_close (void *request, void *context)
+{
+    zmq_close(request);
+    zmq_ctx_destroy(context);
+}
 int ompt_initialize (ompt_function_lookup_t lookup,
         int initial_device_num,
         ompt_data_t *data_from_tool)
 {
+    context = zmq_ctx_new();
+    request = zmq_socket(context, ZMQ_PUSH);    
+    
+    PALIAL_zmq_connect_client(request);
+
     // Runtime entrypoint
     ompt_set_callback_t ompt_set_callback =(ompt_set_callback_t) lookup("ompt_set_callback");
     ompt_get_thread_data = (ompt_get_thread_data_t) lookup("ompt_get_thread_data");
@@ -205,7 +260,8 @@ void ompt_finalize (ompt_data_t *data_from_tool)
 {
     sum_of_callbacks(data_from_tool->ptr);
 #ifdef LOG
-    palial_log_trace(ompt_tasks);
+    //palial_log_trace(ompt_tasks);
+    palial_task_times_trace(ompt_tasks);
 #endif
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
     {
@@ -215,6 +271,9 @@ void ompt_finalize (ompt_data_t *data_from_tool)
     }
     free(data_from_tool->ptr);
     pthread_mutex_destroy(&mutex);
+   
+    PALIAL_zmq_send_signal(request, "end");
+    PALIAL_zmq_close(request, context);
 }
 
 ompt_start_tool_result_t *ompt_start_tool (unsigned int omp_version, const char *runtime_version)

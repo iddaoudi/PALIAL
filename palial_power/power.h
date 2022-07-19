@@ -37,26 +37,27 @@ void PALIAL_query_available_governors(unsigned int cpu)
     cpufreq_put_available_governors(governor);
 }
 
-void PALIAL_query_current_governor_policy(unsigned int cpu)
+char* PALIAL_query_current_governor_policy(unsigned int cpu)
 {
     policy_governor = cpufreq_get_policy(cpu);
-    printf("Current governor policy: ");
+    char *tmp = NULL;
     if (policy_governor)
     {
-        printf("%s\n", policy_governor->governor);
+        strcpy(tmp, policy_governor->governor);
     }
     //free memory
     cpufreq_put_policy(policy_governor);
+    return tmp;
 }
 
-void PALIAL_query_current_frequency_hardware(unsigned int cpu)
+double PALIAL_query_current_frequency_hardware(unsigned int cpu)
 {
-    printf("Current frequency (hardware) of core %d: %f Mhz\n", cpu, cpufreq_get_freq_hardware(cpu)*1e-3);
+    return cpufreq_get_freq_hardware(cpu)*1e-3; //Mhz
 }
 
-void PALIAL_query_current_frequency_kernel(unsigned int cpu)
+double PALIAL_query_current_frequency_kernel(unsigned int cpu)
 {
-    printf("Current frequency (kernel) of core %d: %f Mhz\n", cpu, cpufreq_get_freq_kernel(cpu)*1e-3);
+    return cpufreq_get_freq_kernel(cpu)*1e-3; //Mhz
 }
 
 void PALIAL_set_governor_policy(unsigned int cpu, char* new_governor)

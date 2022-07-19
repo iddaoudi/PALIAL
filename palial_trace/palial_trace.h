@@ -18,6 +18,8 @@
 #include <omp-tools.h>
 #include "../include/cvector.h"
 
+#include "zmq.h"
+
 #define MAX_THREADS     128
 
 #include "ompt_callbacks.h"
@@ -36,6 +38,10 @@ static ompt_get_place_num_t   ompt_get_place_num;
 callback_counter_type *c_counter;
 
 const char *new_name        = NULL;
+
+void PALIAL_zmq_connect_client (void *request);
+void PALIAL_zmq_send_signal (void *request, char *task_and_cpu);
+void PALIAL_zmq_close (void *request, void *context);
 
 extern void trace_palial_set_task_name (const char *name);
 extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name);
@@ -66,7 +72,6 @@ typedef struct {
    double             start_time;  //in us
    double             end_time;
    bool               scheduled;
-   bool               finished;
    int                n_task_dependences;
    int                task_dependences[MAX_MODES];
    int                cpu;

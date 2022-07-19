@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # set up path
-set(OMP_INSTALL /home/xps/Work/llvm-project/build-openmp)
+set(OMP_INSTALL /home/cc/llvm-project/build-openmp)
 set(OMP_LIB_PATH ${OMP_INSTALL}/lib)
 set(OMP_INCLUDE ${OMP_INSTALL}/include)
 
@@ -27,5 +27,5 @@ set(SOURCE_FILES
 
 include_directories(${OMP_INCLUDE})
 add_library(palial_trace SHARED ${SOURCE_FILES})
-target_link_libraries(palial_trace)
+target_link_libraries(palial_trace -lzmq)
 install(TARGETS palial_trace DESTINATION lib)
