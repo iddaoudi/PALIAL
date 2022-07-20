@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# LD_PRELOAD
+trace_so=palial_trace/libpalial_trace.so
+omp_so=../llvm-project/build-openmp/lib/libomp.so
+
+# Parameters
+msize=8192 #8192 16384 24576 32768
+bsize=512
+algo=cholesky
+max_th=63      # numactl
+governor=ondemand
+
+# Compile power control part
+cd palial_power
+gcc server.c -lzmq -lcpufreq -o palial_server
+cd -
+
+# Compile trace library part
+cd palial_trace
+make clean
+make
+cd -
+
+# Compile source part
+cd palial_src
+make clean
+make
+cd -
+
+export OMP_NUM_THREADS=$(expr $max_th + 1)
+
+# Start server
+sudo palial_power/palial_server $(expr $max_th + 1) $governor &
+
+# Launch runs
+LD_PRELOAD=$omp_so:$trace_so numactl --physcpubind=0-$max_th palial_src/palial -a $algo -m $msize -b $bsize >> tasks_times_${msize}_${bsize}_${max_th}_$governor
