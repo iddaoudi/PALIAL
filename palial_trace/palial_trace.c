@@ -26,6 +26,7 @@ extern void trace_palial_set_task_name (const char *name)
 // this upstream function is called everytime inside a RUNNING task, therefore the corresponding task object has already been created
 extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
 {
+    pthread_mutex_lock(&mutex);
     // received name of task plus unique identifier
     int char_counter = 0;
     char str_name[6];
@@ -44,7 +45,6 @@ extern void trace_palial_set_task_cpu_node (int cpu, int node, char* name)
     
     PALIAL_zmq_send_signal(request, task_and_cpu);
     
-    pthread_mutex_lock(&mutex);
     for (int i = 0; i < cvector_size(ompt_tasks); i++)
     {
         if (strcmp(ompt_tasks[i]->name, name) == 0)
