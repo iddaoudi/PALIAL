@@ -19,17 +19,29 @@
 #define NUMBER_OF_TASKS 4
 #define TASK_MAX_STRING_SIZE 5
 
-#define MAX_CPUS 4
+int MAX_CPUS; 
+char *input_governor;
 
 char cholesky_tasks[NUMBER_OF_TASKS][TASK_MAX_STRING_SIZE] = {"gemm", "potrf", "syrk", "trsm"};
 char qr_tasks[NUMBER_OF_TASKS][TASK_MAX_STRING_SIZE] = {"ormqr", "tsqrt", "tsmqr", "geqrt"};
 char lu_tasks[NUMBER_OF_TASKS][TASK_MAX_STRING_SIZE] = {"geqrf", "trsm", "gemm"};
 
-int main ()
+int main (int argc, char *argv[])
 {
+    if (argc < 3 || argc > 3)
+    {
+        printf("Server side arguments problem.\n");
+        exit(1);
+    }
+    else
+    {
+        MAX_CPUS = atoi(argv[1]);
+        input_governor = argv[2];
+    }
+
     // change the governor at the start of the server 
     for (int i = 0; i < MAX_CPUS; i++)
-        PALIAL_set_governor_policy(i, "userspace");
+        PALIAL_set_governor_policy(i, input_governor);
 
     void *context = zmq_ctx_new();
     void *server  = zmq_socket(context, ZMQ_PULL);
