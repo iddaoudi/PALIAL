@@ -13,8 +13,8 @@ import csv
 import os.path
 
 
-matrix_sizes = ["8192"] #, "16384", "24576", "32768"]
-thread_sizes = ["31"] #, "63"]
+matrix_sizes = ["8192", "16384", "24576", "32768"]
+thread_sizes = ["31", "63"]
 governors    = ["ondemand"] #, "userspace"]
 
 all_tasks = []
@@ -43,26 +43,27 @@ for matrix in matrix_sizes:
                             break
                     all_times.append(row[1])
 
-index = 1
-
-for t in tasks:
-    for task_name in all_tasks: 
-        if task_name == t:
-            tmp_index.append(task_name)
-            tmp_times.append(float(all_times[counter]))
-        counter += 1
-    data_plot = pd.DataFrame({"Tasks":tmp_index, "Times":tmp_times})
-    sns.stripplot(data = data_plot, x = "Tasks", y = "Times", alpha=0.5, s=10, linewidth=1.0)
-    
-    plt.xlabel("Task order")
-    plt.ylabel("Time (ms)")
-    
-    counter = 0
-    index += 1
-
-plt.savefig(file_name + ".png")
-
-assert len(all_tasks) == len(all_times)
+        index = 1
+        
+        sns.set_theme(style="darkgrid")
+        for t in tasks:
+            for task_name in all_tasks: 
+                if task_name == t:
+                    tmp_index.append(task_name)
+                    tmp_times.append(float(all_times[counter]))
+                counter += 1
+            data_plot = pd.DataFrame({"Tasks":tmp_index, "Times":tmp_times})
+            sns.violinplot(data = data_plot, x = "Tasks", y = "Times", inner=None, palette="muted")
+            sns.stripplot(data = data_plot, x = "Tasks", y = "Times", alpha=0.5, s=5, linewidth=1.0)
+            
+            plt.xlabel("Task type")
+            plt.ylabel("Time (ms)")
+            
+            counter = 0
+            index += 1
+        
+        #plt.show()
+        plt.savefig(file_name + ".png", format='png')
 
 
 my_file.close()
