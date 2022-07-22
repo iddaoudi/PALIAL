@@ -12,10 +12,10 @@ import pandas as pd
 import csv
 import os.path
 
-
 matrix_sizes = ["8192", "16384", "24576", "32768"]
 thread_sizes = ["31", "63"]
-governors    = ["ondemand"] #, "userspace"]
+governors    = ["userspace"] #, "userspace"]
+note         = "_syrk_trsm_to_min"
 
 all_tasks = []
 all_times = []
@@ -30,7 +30,7 @@ counter = 0
 for matrix in matrix_sizes:
     for thread in thread_sizes:
         for governor in governors:
-            file_name = "tasks_times_" + matrix + "_512_" + thread + "_" + governor
+            file_name = "tasks_times_" + matrix + "_512_" + thread + "_" + governor + note
             if os.path.exists("data/" + file_name):
                 my_file = open("data/" + file_name, "r")
                 csv_file = csv.reader(my_file)
