@@ -68,19 +68,19 @@ int main (int argc, char *argv[])
         
         if (strcmp(task, "gemm") == 0)
         {
-                        
+            PALIAL_set_max_frequency(cpu, 2800000);  //KHz
         }
         else if (strcmp(task, "trsm") == 0)
         {
-
+            PALIAL_set_max_frequency(cpu, 1200000);  //KHz
         }
         else if (strcmp(task, "syrk") == 0)
         {
-
+            PALIAL_set_max_frequency(cpu, 1200000);  //KHz
         }
         else if (strcmp(task, "potrf") == 0)
         {
-
+            PALIAL_set_max_frequency(cpu, 2800000);  //KHz
         }
 
         //PALIAL_query_current_frequency_kernel(itask_and_cpu);
@@ -88,7 +88,11 @@ int main (int argc, char *argv[])
     
     // set back the original governor policy
     for (int i = 0; i < MAX_CPUS; i++)
+    {
         PALIAL_set_governor_policy(i, "ondemand");
+        PALIAL_set_max_frequency(i, 2800000);  //KHz
+    }
+        
 
     return 0;
 }
